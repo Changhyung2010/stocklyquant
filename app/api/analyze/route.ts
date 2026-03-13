@@ -114,11 +114,18 @@ Required JSON structure:
     cache: "no-store",
   });
 
-  // Parse response body first so we can extract error messages for all status codes
-  const env = await res.json();
+  // Read as text first — res.json() itself throws on empty bodies
+  const rawBody = await res.text();
+
+  // Try to parse the body as JSON (may fail for HTML error pages, empty bodies, etc.)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let env: any = {};
+  if (rawBody.trim()) {
+    try { env = JSON.parse(rawBody); } catch { /* body wasn't JSON, env stays {} */ }
+  }
 
   if (!res.ok) {
-    // Anthropic error format: { error: { message: "..." } }
+    // Anthropic error envelope: { error: { message: "...", type: "..." } }
     const msg: string =
       env?.error?.message ?? `Claude API error (HTTP ${res.status})`;
     throw new Error(msg);
@@ -126,7 +133,7 @@ Required JSON structure:
 
   const text: string = env?.content?.[0]?.text ?? "";
   if (!text.trim()) {
-    throw new Error("Claude returned an empty response");
+    throw new Error("Claude returned an empty response — check your API key and account status");
   }
 
   // Strip markdown code fences if present
@@ -136,13 +143,14 @@ Required JSON structure:
     const fence = json.lastIndexOf("```");
     if (fence !== -1) json = json.slice(0, fence);
   }
+  json = json.trim();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let raw: any;
   try {
     raw = JSON.parse(json);
   } catch {
-    throw new Error(`Claude response was not valid JSON: ${json.slice(0, 120)}`);
+    throw new Error(`Claude returned non-JSON text: "${json.slice(0, 200)}"`);
   }
   const sw = raw.score_weights;
   const total = sw.momentum + sw.value + sw.quality + sw.size + sw.volatility || 1;
