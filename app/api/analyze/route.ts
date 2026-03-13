@@ -97,7 +97,7 @@ Required JSON structure:
 }`;
 
   const body = {
-    model: "claude-haiku-4-5-20251022",
+    model: "claude-3-5-haiku-20241022",
     max_tokens: 1024,
     system: systemPrompt,
     messages: [{ role: "user", content: prompt }],
@@ -114,16 +114,36 @@ Required JSON structure:
     cache: "no-store",
   });
 
-  if (res.status === 401) throw new Error("Invalid Claude API key");
-
+  // Parse response body first so we can extract error messages for all status codes
   const env = await res.json();
-  const text: string = env?.content?.[0]?.text ?? "";
-  let json = text.trim();
-  if (json.startsWith("```")) {
-    json = json.split("\n").slice(1, -1).join("\n");
+
+  if (!res.ok) {
+    // Anthropic error format: { error: { message: "..." } }
+    const msg: string =
+      env?.error?.message ?? `Claude API error (HTTP ${res.status})`;
+    throw new Error(msg);
   }
 
-  const raw = JSON.parse(json);
+  const text: string = env?.content?.[0]?.text ?? "";
+  if (!text.trim()) {
+    throw new Error("Claude returned an empty response");
+  }
+
+  // Strip markdown code fences if present
+  let json = text.trim();
+  if (json.startsWith("```")) {
+    json = json.split("\n").slice(1).join("\n");
+    const fence = json.lastIndexOf("```");
+    if (fence !== -1) json = json.slice(0, fence);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let raw: any;
+  try {
+    raw = JSON.parse(json);
+  } catch {
+    throw new Error(`Claude response was not valid JSON: ${json.slice(0, 120)}`);
+  }
   const sw = raw.score_weights;
   const total = sw.momentum + sw.value + sw.quality + sw.size + sw.volatility || 1;
   const norm = (v: number) => v / total;
