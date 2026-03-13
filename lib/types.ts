@@ -204,6 +204,7 @@ export interface QuantAnalysis {
   valueMetrics?: ValueMetrics;
   priceHistory: PricePoint[];
   claudeAnalysis?: ClaudeAnalysis;
+  claudeError?: string;
   quantScore: number;
   quantScoreLabel: string;
 }

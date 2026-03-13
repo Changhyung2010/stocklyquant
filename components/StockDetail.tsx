@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { BookmarkPlus, BookmarkCheck, TrendingUp, Activity, DollarSign, BarChart2 } from "lucide-react";
+import { BookmarkPlus, BookmarkCheck, TrendingUp, Activity, DollarSign, BarChart2, AlertCircle } from "lucide-react";
 import type { QuantAnalysis } from "@/lib/types";
 import { PriceChart } from "./Charts";
 import AIAnalysis from "./AIAnalysis";
@@ -127,6 +127,17 @@ export default function StockDetail({ analysis }: Props) {
         <p className="text-xs text-gray-400 mb-3 uppercase tracking-wide">Price History (1 Year)</p>
         <PriceChart data={analysis.priceHistory} />
       </div>
+
+      {/* Claude error banner */}
+      {analysis.claudeError && (
+        <div className="flex items-start gap-3 bg-orange-900/30 border border-orange-700/50 rounded-xl p-3 mb-4">
+          <AlertCircle size={15} className="text-orange-400 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm text-orange-300 font-medium">AI Analysis Failed</p>
+            <p className="text-xs text-orange-400/80 mt-0.5">{analysis.claudeError}</p>
+          </div>
+        </div>
+      )}
 
       {/* Panel tabs if AI available */}
       {analysis.claudeAnalysis && (

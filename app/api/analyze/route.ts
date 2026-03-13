@@ -313,12 +313,14 @@ export async function POST(req: NextRequest) {
 
     // Claude analysis (optional)
     let claudeAnalysis: ClaudeAnalysis | undefined;
+    let claudeError: string | undefined;
     if (claudeKey) {
       try {
         const prompt = buildClaudePrompt(ticker, profile, famaFrench, momentum, volatility, valueMetrics, quantScore);
         claudeAnalysis = await callClaude(prompt, claudeKey);
-      } catch {
-        // Claude is optional; don't fail the whole request
+      } catch (err) {
+        claudeError = err instanceof Error ? err.message : "Claude analysis failed";
+        console.error("[Claude]", claudeError);
       }
     }
 
@@ -333,6 +335,7 @@ export async function POST(req: NextRequest) {
       valueMetrics,
       priceHistory: stockBars,
       claudeAnalysis,
+      claudeError,
       quantScore,
       quantScoreLabel: quantScoreLabel(quantScore),
     };
