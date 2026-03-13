@@ -65,11 +65,11 @@ export default function MarketDashboard() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto animate-slide-up">
-      <div className="flex items-center justify-between mb-8">
+    <div className="animate-slide-up">
+      <div className="flex items-center justify-between mb-10">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Global Markets</h1>
-          <p className="text-text-secondary mt-1 flex items-center gap-2">
+          <h1 className="text-4xl font-black text-white tracking-tighter">Global Markets</h1>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-text-secondary mt-1 flex items-center gap-2 opacity-60">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
@@ -80,28 +80,28 @@ export default function MarketDashboard() {
         <button
           onClick={load}
           disabled={loading}
-          className="p-2.5 bg-surface-highlight hover:bg-surface-highlight/80 rounded-xl text-text-secondary hover:text-white transition-all disabled:opacity-50"
+          className="p-3 bg-surface-highlight/50 border border-white/5 hover:bg-surface-highlight hover:border-white/10 rounded-2xl text-text-secondary hover:text-white transition-all disabled:opacity-50 shadow-lg"
         >
-          <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+          <RefreshCw size={20} className={loading ? "animate-spin" : ""} />
         </button>
       </div>
 
       {error && (
-        <div className="bg-danger/10 border border-danger/20 rounded-xl p-4 mb-6 flex items-center gap-3 text-danger">
+        <div className="bg-danger/10 border border-danger/20 rounded-2xl p-4 mb-8 flex items-center gap-3 text-danger animate-fade-in">
           <Activity size={18} />
-          <span className="text-sm font-medium">{error}</span>
+          <span className="text-sm font-bold">{error}</span>
         </div>
       )}
 
       {loading && indices.length === 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="glass-panel h-32 rounded-2xl animate-pulse" />
+            <div key={i} className="glass-panel h-40 rounded-[1.5rem] animate-pulse" />
           ))}
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
         {indices.map((idx) => {
           const isPos = idx.changePct >= 0;
           const info = INDEX_INFO[idx.ticker] ?? { name: idx.ticker, icon: Activity };
@@ -110,34 +110,34 @@ export default function MarketDashboard() {
           return (
             <div
               key={idx.ticker}
-              className="group relative glass-panel rounded-2xl p-5 hover:bg-surface-highlight/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+              className="group relative glass-panel rounded-[1.5rem] p-6 hover:bg-surface-highlight/40 transition-all duration-300 hover:translate-y-[-4px] hover:shadow-2xl overflow-hidden"
             >
-              <div className="flex justify-between items-start mb-4">
+              <div className="flex justify-between items-start mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-surface-highlight group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                    <IconComp size={18} className="text-text-secondary group-hover:text-primary" />
+                  <div className="p-2.5 rounded-xl bg-surface-highlight/50 border border-white/5 group-hover:bg-primary/10 group-hover:border-primary/20 transition-all">
+                    <IconComp size={20} className="text-text-secondary group-hover:text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-white leading-none">{idx.ticker}</h3>
-                    <p className="text-[10px] font-medium text-text-secondary uppercase tracking-wider mt-1">{info.name}</p>
+                    <h3 className="font-black text-lg text-white leading-none tracking-tight">{idx.ticker}</h3>
+                    <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mt-1 opacity-50">{info.name}</p>
                   </div>
                 </div>
               </div>
 
               <div className="mt-auto">
-                <p className="text-2xl font-bold text-white tabular-nums tracking-tight">
-                  ${idx.price.toFixed(2)}
+                <p className="text-3xl font-bold text-white tabular-nums tracking-tighter">
+                  ${idx.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
-                <div className={`flex items-center gap-1.5 text-sm font-semibold mt-1 ${isPos ? "text-success" : "text-danger"}`}>
-                  {isPos ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                <div className={`flex items-center gap-1.5 text-xs font-black mt-1 ${isPos ? "text-success" : "text-danger"}`}>
+                  {isPos ? <TrendingUp size={14} strokeWidth={3} /> : <TrendingDown size={14} strokeWidth={3} />}
                   <span>
-                    {isPos ? "+" : ""}{idx.change.toFixed(2)} ({isPos ? "+" : ""}{idx.changePct.toFixed(2)}%)
+                    {isPos ? "+" : ""}{idx.changePct.toFixed(2)}%
                   </span>
                 </div>
               </div>
               
               {/* Background Glow */}
-              <div className={`absolute -right-6 -bottom-6 w-24 h-24 rounded-full blur-2xl opacity-0 group-hover:opacity-20 transition-opacity pointer-events-none ${isPos ? "bg-success" : "bg-danger"}`} />
+              <div className={`absolute -right-8 -bottom-8 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-[0.15] transition-opacity duration-500 pointer-events-none ${isPos ? "bg-success" : "bg-danger"}`} />
             </div>
           );
         })}

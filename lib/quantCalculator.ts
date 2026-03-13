@@ -540,42 +540,60 @@ export function computeQuantScore(
     size:       weights?.size       ?? DEFAULT_WEIGHTS.size,
     volatility: weights?.volatility ?? DEFAULT_WEIGHTS.volatility,
   };
-  const total = raw.momentum + raw.value + raw.quality + raw.size + raw.volatility || 1;
-  const w = {
-    momentum:   raw.momentum   / total,
-    value:      raw.value      / total,
-    quality:    raw.quality    / total,
-    size:       raw.size       / total,
-    volatility: raw.volatility / total,
+  
+  // Re-normalize weights based on available data
+  const available = {
+    momentum: !!params.momentum,
+    value: !!params.valueMetrics?.bookToMarket,
+    quality: !!params.valueMetrics?.roe,
+    size: !!params.famaFrench,
+    volatility: !!params.volatility
   };
 
-  let score = 50;
+  let activeTotal = 0;
+  if (available.momentum) activeTotal += raw.momentum;
+  if (available.value) activeTotal += raw.value;
+  if (available.quality) activeTotal += raw.quality;
+  if (available.size) activeTotal += raw.size;
+  if (available.volatility) activeTotal += raw.volatility;
 
-  if (params.momentum) {
+  if (activeTotal === 0) return 50; // Fallback if no data
+
+  const w = {
+    momentum:   available.momentum ? raw.momentum / activeTotal : 0,
+    value:      available.value ? raw.value / activeTotal : 0,
+    quality:    available.quality ? raw.quality / activeTotal : 0,
+    size:       available.size ? raw.size / activeTotal : 0,
+    volatility: available.volatility ? raw.volatility / activeTotal : 0,
+  };
+
+  let score = 0;
+
+  if (available.momentum && params.momentum) {
     const momScore = Math.min(Math.max(((params.momentum.momentum12M - 0.7) / 0.8) * 100, 0), 100);
-    score += (momScore - 50) * w.momentum;
+    score += momScore * w.momentum;
   }
-  if (params.valueMetrics?.bookToMarket !== undefined) {
+  if (available.value && params.valueMetrics?.bookToMarket !== undefined) {
     const valScore = Math.min(Math.max((params.valueMetrics.bookToMarket / 1.5) * 100, 0), 100);
-    score += (valScore - 50) * w.value;
+    score += valScore * w.value;
   }
-  if (params.valueMetrics?.roe !== undefined) {
+  if (available.quality && params.valueMetrics?.roe !== undefined) {
     const qualScore = Math.min(
       Math.max(((params.valueMetrics.roe + 0.05) / 0.4) * 100, 0),
       100
     );
-    score += (qualScore - 50) * w.quality;
+    score += qualScore * w.quality;
   }
-  if (params.famaFrench) {
+  if (available.size && params.famaFrench) {
     const sizeScore = params.famaFrench.betas.smbBeta > 0 ? 65 : 40;
-    score += (sizeScore - 50) * w.size;
+    score += sizeScore * w.size;
   }
-  if (params.volatility) {
+  if (available.volatility && params.volatility) {
     const volScore = Math.min(
       Math.max(((0.6 - params.volatility.annualizedVolatility) / 0.6) * 100, 0),
       100
     );
-    score += (volScore - 50) * w.volatility;
+    score += volScore * w.volatility;
   }
 
   return Math.min(Math.max(score, 0), 100);

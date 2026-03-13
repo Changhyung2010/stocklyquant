@@ -110,18 +110,18 @@ export default function HomePage() {
       </aside>
 
       {/* ─── Main Content ─────────────────────────────────────────────────── */}
-      <main className="flex-1 relative overflow-hidden bg-gradient-to-br from-background via-background to-surface-highlight/20">
+      <main className="flex-1 relative overflow-hidden bg-gradient-to-br from-background via-background to-surface-highlight/10">
         {/* Ambient Glow Effects */}
-        <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-secondary/5 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-secondary/10 rounded-full blur-[120px] pointer-events-none" />
 
-        {/* Scrollable Area */}
-        <div className="h-full overflow-y-auto scroll-smooth relative z-10">
-          <div className="max-w-7xl mx-auto h-full">
+        {/* Content Container - No overflow here, let children handle it */}
+        <div className="h-full relative z-10">
+          <div className="max-w-7xl mx-auto h-full overflow-hidden">
             {activeTab === "search" && <StockSearch />}
-            {activeTab === "watchlist" && <Watchlist />}
-            {activeTab === "market" && <MarketDashboard />}
-            {activeTab === "settings" && <Settings />}
+            {activeTab === "watchlist" && <div className="h-full overflow-y-auto px-6 py-8"><Watchlist /></div>}
+            {activeTab === "market" && <div className="h-full overflow-y-auto px-6 py-8"><MarketDashboard /></div>}
+            {activeTab === "settings" && <div className="h-full overflow-y-auto px-6 py-8"><Settings /></div>}
           </div>
         </div>
       </main>

@@ -3,11 +3,11 @@
 @tailwind utilities;
 
 :root {
-  /* Modern Fintech Dark Theme */
-  --background: #09090b; /* Zinc 950 */
-  --surface: #18181b; /* Zinc 900 */
-  --surface-highlight: #27272a; /* Zinc 800 */
-  --border: #27272a;
+  /* Modern Fintech Dark Theme - Refined Zinc */
+  --background: #09090b; 
+  --surface: #121214; 
+  --surface-highlight: #1c1c1f;
+  --border: rgba(255, 255, 255, 0.08);
   
   --primary: #06b6d4; /* Cyan 500 */
   --secondary: #8b5cf6; /* Violet 500 */
@@ -16,34 +16,44 @@
   --danger: #f43f5e; /* Rose 500 */
   --warning: #f59e0b; /* Amber 500 */
   
-  --text-primary: #f4f4f5; /* Zinc 100 */
-  --text-secondary: #a1a1aa; /* Zinc 400 */
+  --text-primary: #f4f4f5; 
+  --text-secondary: #a1a1aa; 
 }
 
 body {
   background-color: var(--background);
   color: var(--text-primary);
   font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
-  overflow: hidden; /* Prevent body scroll, handle in containers */
+  overflow: hidden; 
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Glassmorphism Utilities */
+/* Glassmorphism & Surface Utilities */
 @layer utilities {
   .glass-panel {
-    background-color: rgba(24, 24, 27, 0.6);
-    @apply backdrop-blur-md border border-border;
+    background: rgba(18, 18, 20, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
   }
   
   .glass-input {
-    background-color: rgba(39, 39, 42, 0.5);
+    background: rgba(28, 28, 31, 0.5);
     border: 1px solid var(--border);
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     outline: none;
   }
   
   .glass-input:focus {
-    border-color: rgba(6, 182, 212, 0.5);
-    box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
+    border-color: rgba(6, 182, 212, 0.4);
+    background: rgba(28, 28, 31, 0.7);
+    box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.1);
+  }
+
+  .surface-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 1.5rem;
   }
   
   .text-gradient-primary {

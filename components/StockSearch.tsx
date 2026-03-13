@@ -316,23 +316,27 @@ export default function StockSearch() {
 
   // 3. Results State
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full bg-background/50">
       {/* Persistent Header */}
-      <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border/50 px-4 py-3 flex items-center gap-4">
-        <div className="w-full max-w-lg">
+      <div className="sticky top-0 z-30 bg-background/40 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex items-center gap-6 shadow-xl">
+        <div className="flex-1 max-w-xl">
           <SearchInput />
         </div>
         {error && (
-          <div className="flex items-center gap-2 text-danger text-sm bg-danger/10 px-3 py-1.5 rounded-lg border border-danger/20">
+          <div className="flex items-center gap-2 text-danger text-xs font-bold bg-danger/10 px-4 py-2 rounded-xl border border-danger/20 animate-fade-in">
             <AlertCircle size={14} />
             <span>{error}</span>
           </div>
         )}
       </div>
 
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto scroll-smooth">
-        {currentAnalysis && <StockDetail analysis={currentAnalysis} />}
+      {/* Scrollable Content Container */}
+      <div className="flex-1 overflow-y-auto scroll-smooth custom-scrollbar">
+        {currentAnalysis && (
+          <div className="pb-12">
+            <StockDetail analysis={currentAnalysis} />
+          </div>
+        )}
       </div>
     </div>
   );
