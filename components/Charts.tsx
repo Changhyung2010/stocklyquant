@@ -301,7 +301,7 @@ interface QuantPredictionChartProps {
 
 export function QuantPredictionChart({ path }: QuantPredictionChartProps) {
   const [showMath, setShowMath] = React.useState(false);
-  if (!path.points.length) return null;
+  if (!path?.points?.length) return null;
 
   const lastActualDate = path.points.filter((p) => p.actual !== undefined).at(-1)?.date ?? "";
 
@@ -312,7 +312,7 @@ export function QuantPredictionChart({ path }: QuantPredictionChartProps) {
   const yMax = Math.max(...allVals);
   const pad = (yMax - yMin) * 0.12;
 
-  const exp30 = path.expectedReturn30d;
+  const exp30 = path.expectedReturn30d || 0;
   const expColor = exp30 >= 0 ? "#22d3ee" : "#fb7185";
 
   const fmtDate = (d: string) => {
@@ -320,7 +320,15 @@ export function QuantPredictionChart({ path }: QuantPredictionChartProps) {
     return `${dt.toLocaleString("default", { month: "short" })} ${dt.getDate()}`;
   };
 
-  const { signals } = path;
+  const signals = path.signals || {
+    ff5Weight: 0, ff5AnnualReturn: 0,
+    momentumWeight: 0, momentum3MAnnualised: 0,
+    macroWeight: 0, macroAnnualReturn: 0,
+    riskWeight: 0, riskAdjustedAnnualReturn: 0,
+    scoreWeight: 0, scoreAlphaAnnual: 0,
+    compositeDailyReturn: 0
+  };
+
   const signalRows = [
     { label: "Formula Alpha", weight: signals.ff5Weight, val: signals.ff5AnnualReturn, color: "from-blue-500 to-indigo-600" },
     { label: "Momentum", weight: signals.momentumWeight, val: signals.momentum3MAnnualised, color: "from-emerald-500 to-teal-600" },

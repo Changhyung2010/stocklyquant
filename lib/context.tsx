@@ -35,35 +35,63 @@ export function AppProvider({ children, envKeysSet }: { children: React.ReactNod
   const [currentAnalysis, setCurrentAnalysis] = useState<QuantAnalysis | null>(null);
   const [activeTab, setActiveTab] = useState<AppContextValue["activeTab"]>("search");
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount (hydration safe)
   useEffect(() => {
     try {
       const stored = localStorage.getItem("sq_api_keys");
-      if (stored) setApiKeysState(JSON.parse(stored));
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed === "object") {
+          setApiKeysState({
+            polygon: parsed.polygon || "",
+            fmp: parsed.fmp || "",
+            claude: parsed.claude || "",
+          });
+        }
+      }
       const wl = localStorage.getItem("sq_watchlist");
-      if (wl) setWatchlist(JSON.parse(wl));
-    } catch {
-      // ignore
+      if (wl) {
+        const parsed = JSON.parse(wl);
+        if (Array.isArray(parsed)) {
+          setWatchlist(parsed);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load state from localStorage:", e);
     }
   }, []);
 
   const setApiKeys = useCallback((keys: ApiKeys) => {
     setApiKeysState(keys);
-    localStorage.setItem("sq_api_keys", JSON.stringify(keys));
+    try {
+      localStorage.setItem("sq_api_keys", JSON.stringify(keys));
+    } catch (e) {
+      console.error("Failed to save api keys:", e);
+    }
   }, []);
 
   const addToWatchlist = useCallback((ticker: string, score?: number, price?: number) => {
     setWatchlist((prev) => {
       if (prev.some((w) => w.ticker === ticker)) return prev;
+      
+      // Fallback for randomUUID if not in secure context or old browser
+      const id = typeof crypto !== "undefined" && crypto.randomUUID 
+        ? crypto.randomUUID() 
+        : Math.random().toString(36).substring(2, 15);
+
       const item: WatchlistItem = {
-        id: crypto.randomUUID(),
+        id,
         ticker,
         addedDate: new Date().toISOString(),
         lastQuantScore: score,
         lastPrice: price,
       };
       const next = [...prev, item];
-      localStorage.setItem("sq_watchlist", JSON.stringify(next));
+      try {
+        localStorage.setItem("sq_watchlist", JSON.stringify(next));
+      } catch (e) {
+        console.error("Failed to save watchlist:", e);
+      }
       return next;
     });
   }, []);

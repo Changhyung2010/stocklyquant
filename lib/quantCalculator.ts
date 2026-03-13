@@ -602,7 +602,11 @@ export function computeReturnsFromPrices(prices: PricePoint[]): DailyReturn[] {
   for (let i = 1; i < prices.length; i++) {
     const prev = prices[i - 1].price;
     const curr = prices[i].price;
-    if (prev > 0) returns.push({ date: prices[i].date, returnValue: (curr - prev) / prev });
+    if (prev > 0) {
+      const val = (curr - prev) / prev;
+      // Cap individual daily returns to +/- 100% to avoid outliers breaking OLS
+      returns.push({ date: prices[i].date, returnValue: Math.min(Math.max(val, -1), 1) });
+    }
   }
   return returns;
 }
@@ -912,12 +916,15 @@ export function computeQuantPricePath(
 
   // ── Composite weighted daily return ─────────────────────────────────────
   const W = { FORMULA: 0.30, MOM: 0.25, MACRO: 0.20, RISK: 0.15, SCR: 0.10 };
-  const compositeDaily =
+  let compositeDaily =
     W.FORMULA * formulaDaily +
     W.MOM * momDaily +
     W.MACRO * macroDaily +
     W.RISK * riskDaily +
     W.SCR * scoreDaily;
+  
+  // Cap daily drift to +/- 2% (approx 500% annualized) to prevent UI-breaking exponential growth
+  compositeDaily = Math.min(Math.max(compositeDaily, -0.02), 0.02);
   const compositeAnnual = compositeDaily * 252;
 
   // ── Forecast ───────────────────────────────────────────────────────────

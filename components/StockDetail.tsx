@@ -80,7 +80,9 @@ export default function StockDetail({ analysis }: Props) {
   const { addToWatchlist, removeFromWatchlist, watchlist } = useApp();
   const [activeTab, setActiveTab] = useState<"quant" | "ai">("quant");
   
-  const inWatchlist = watchlist.some((w) => w.ticker === analysis.ticker);
+  if (!analysis) return null;
+
+  const inWatchlist = watchlist?.some((w) => w.ticker === analysis.ticker);
   const config = SCORE_CONFIG[analysis.quantScoreLabel] ?? SCORE_CONFIG["Neutral"];
   const { famaFrench: ff, momentum: mom, volatility: vol, valueMetrics: val, profile } = analysis;
   const change = profile?.changes ?? 0;
@@ -139,7 +141,7 @@ export default function StockDetail({ analysis }: Props) {
             {change !== undefined && (
               <span className={`text-lg font-semibold flex items-center gap-1 ${changePositive ? "text-success" : "text-danger"}`}>
                 {changePositive ? <ArrowUpRight size={20} /> : <ArrowDownRight size={20} />}
-                {Math.abs(change).toFixed(2)} ({Math.abs((change / (profile!.price! - change)) * 100).toFixed(2)}%)
+                {Math.abs(change).toFixed(2)} ({profile?.price ? Math.abs((change / (profile.price - change)) * 100).toFixed(2) : 0}%)
               </span>
             )}
           </div>
@@ -165,7 +167,7 @@ export default function StockDetail({ analysis }: Props) {
               </div>
               <div className="flex items-end gap-2">
                 <span className={`text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r ${config.gradient}`}>
-                  {analysis.quantScore.toFixed(0)}
+                  {(analysis.quantScore || 0).toFixed(0)}
                 </span>
                 <span className="text-lg font-bold text-text-secondary mb-1.5">/ 100</span>
               </div>
@@ -175,7 +177,7 @@ export default function StockDetail({ analysis }: Props) {
               <div className="w-full bg-surface-highlight rounded-full h-2 mb-2 overflow-hidden">
                 <div 
                   className={`h-full bg-gradient-to-r ${config.gradient} transition-all duration-1000 ease-out`} 
-                  style={{ width: `${analysis.quantScore}%` }}
+                  style={{ width: `${analysis.quantScore || 0}%` }}
                 />
               </div>
               <p className={`text-right font-bold ${config.text} uppercase tracking-widest text-sm`}>

@@ -46,6 +46,22 @@ export default function AIAnalysis({ analysis }: Props) {
   const formulaClass = FORMULA_STYLES[analysis.selectedFormula] ?? "bg-surface-highlight text-text-secondary border-border";
   const riskClass    = RISK_STYLES[analysis.riskMetric]         ?? "bg-surface-highlight text-text-secondary border-border";
 
+  const scoreWeights = analysis.scoreWeights || {
+    momentum: 0,
+    value: 0,
+    quality: 0,
+    size: 0,
+    volatility: 0
+  };
+
+  const ffFactorEmphasis = analysis.ffFactorEmphasis || {
+    market: 0,
+    smb: 0,
+    hml: 0,
+    rmw: 0,
+    cma: 0
+  };
+
   return (
     <div className="space-y-6 animate-slide-up">
       {/* Research Summary */}
@@ -96,7 +112,7 @@ export default function AIAnalysis({ analysis }: Props) {
             <div className="flex items-center justify-between p-3 rounded-xl bg-surface/50 border border-border">
               <span className="text-sm text-text-secondary">AI-Adjusted Score</span>
               <span className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
-                {analysis.aiAdjustedScore.toFixed(0)}
+                {(analysis.aiAdjustedScore || 0).toFixed(0)}
               </span>
             </div>
             
@@ -135,11 +151,11 @@ export default function AIAnalysis({ analysis }: Props) {
             <h3 className="text-lg font-bold text-white">Optimized Weights</h3>
           </div>
           <div className="space-y-4">
-            <WeightBar label="Momentum"   value={analysis.scoreWeights.momentum}   color="bg-blue-500" />
-            <WeightBar label="Value"      value={analysis.scoreWeights.value}      color="bg-teal-500" />
-            <WeightBar label="Quality"    value={analysis.scoreWeights.quality}    color="bg-purple-500" />
-            <WeightBar label="Size"       value={analysis.scoreWeights.size}       color="bg-orange-500" />
-            <WeightBar label="Volatility" value={analysis.scoreWeights.volatility} color="bg-rose-500" />
+            <WeightBar label="Momentum"   value={scoreWeights.momentum}   color="bg-blue-500" />
+            <WeightBar label="Value"      value={scoreWeights.value}      color="bg-teal-500" />
+            <WeightBar label="Quality"    value={scoreWeights.quality}    color="bg-purple-500" />
+            <WeightBar label="Size"       value={scoreWeights.size}       color="bg-orange-500" />
+            <WeightBar label="Volatility" value={scoreWeights.volatility} color="bg-rose-500" />
           </div>
         </div>
 
@@ -152,11 +168,11 @@ export default function AIAnalysis({ analysis }: Props) {
             <h3 className="text-lg font-bold text-white">Factor Beta Sensitivity</h3>
           </div>
           <div className="space-y-4">
-            <WeightBar label="Market (β₁)"          value={analysis.ffFactorEmphasis.market} color="bg-blue-500" />
-            <WeightBar label="Size SMB (β₂)"        value={analysis.ffFactorEmphasis.smb}    color="bg-teal-500" />
-            <WeightBar label="Value HML (β₃)"       value={analysis.ffFactorEmphasis.hml}    color="bg-yellow-500" />
-            <WeightBar label="Profitability RMW (β₄)" value={analysis.ffFactorEmphasis.rmw} color="bg-purple-500" />
-            <WeightBar label="Investment CMA (β₅)"  value={analysis.ffFactorEmphasis.cma}   color="bg-orange-500" />
+            <WeightBar label="Market (β₁)"          value={ffFactorEmphasis.market} color="bg-blue-500" />
+            <WeightBar label="Size SMB (β₂)"        value={ffFactorEmphasis.smb}    color="bg-teal-500" />
+            <WeightBar label="Value HML (β₃)"       value={ffFactorEmphasis.hml}    color="bg-yellow-500" />
+            <WeightBar label="Profitability RMW (β₄)" value={ffFactorEmphasis.rmw} color="bg-purple-500" />
+            <WeightBar label="Investment CMA (β₅)"  value={ffFactorEmphasis.cma}   color="bg-orange-500" />
           </div>
         </div>
       </div>

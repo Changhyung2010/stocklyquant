@@ -20,18 +20,22 @@ export default function HomePage() {
 
   // Listen for analyze events from Watchlist component
   useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
     function handler(e: Event) {
       const detail = (e as CustomEvent).detail as { ticker: string };
       setActiveTab("search");
       // We delay slightly so search tab mounts first
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
         window.dispatchEvent(
           new CustomEvent("sq:fill-ticker", { detail: { ticker: detail.ticker } })
         );
       }, 50);
     }
     window.addEventListener("sq:analyze", handler);
-    return () => window.removeEventListener("sq:analyze", handler);
+    return () => {
+      window.removeEventListener("sq:analyze", handler);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [setActiveTab]);
 
   return (

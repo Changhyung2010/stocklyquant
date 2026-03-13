@@ -104,7 +104,8 @@ export default function MarketDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {indices.map((idx) => {
           const isPos = idx.changePct >= 0;
-          const Info = INDEX_INFO[idx.ticker] ?? { name: idx.ticker, icon: Activity };
+          const info = INDEX_INFO[idx.ticker] ?? { name: idx.ticker, icon: Activity };
+          const IconComp = info.icon;
           
           return (
             <div
@@ -114,11 +115,11 @@ export default function MarketDashboard() {
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-surface-highlight group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                    <Info.icon size={18} className="text-text-secondary group-hover:text-primary" />
+                    <IconComp size={18} className="text-text-secondary group-hover:text-primary" />
                   </div>
                   <div>
                     <h3 className="font-bold text-white leading-none">{idx.ticker}</h3>
-                    <p className="text-[10px] font-medium text-text-secondary uppercase tracking-wider mt-1">{Info.name}</p>
+                    <p className="text-[10px] font-medium text-text-secondary uppercase tracking-wider mt-1">{info.name}</p>
                   </div>
                 </div>
               </div>
