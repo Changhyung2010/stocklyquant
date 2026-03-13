@@ -97,7 +97,7 @@ Required JSON structure:
 }`;
 
   const body = {
-    model: "claude-3-5-haiku-20241022",
+    model: "claude-haiku-4-5-20251022",
     max_tokens: 1024,
     system: systemPrompt,
     messages: [{ role: "user", content: prompt }],
