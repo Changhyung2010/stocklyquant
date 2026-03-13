@@ -1,6 +1,9 @@
 "use client";
 import { useState } from "react";
-import { BookmarkPlus, BookmarkCheck, TrendingUp, Activity, DollarSign, BarChart2, AlertCircle, Shield, Calculator } from "lucide-react";
+import { 
+  BookmarkPlus, BookmarkCheck, TrendingUp, Activity, DollarSign, 
+  BarChart2, AlertCircle, Shield, Calculator, Zap, ArrowUpRight, ArrowDownRight, Brain
+} from "lucide-react";
 import type { QuantAnalysis } from "@/lib/types";
 import { PriceChart, PredictionChart, QuantPredictionChart } from "./Charts";
 import AIAnalysis from "./AIAnalysis";
@@ -11,29 +14,54 @@ interface Props {
   analysis: QuantAnalysis;
 }
 
-const SCORE_GRADIENT: Record<string, string> = {
-  "Strong Buy": "from-emerald-500 to-green-400",
-  Buy: "from-green-500 to-teal-400",
-  Neutral: "from-yellow-500 to-amber-400",
-  Sell: "from-orange-500 to-amber-500",
-  "Strong Sell": "from-red-500 to-rose-500",
+const SCORE_CONFIG: Record<string, { gradient: string; text: string; icon: any }> = {
+  "Strong Buy": { gradient: "from-emerald-500 to-green-400", text: "text-emerald-400", icon: TrendingUp },
+  Buy: { gradient: "from-green-500 to-teal-400", text: "text-green-400", icon: ArrowUpRight },
+  Neutral: { gradient: "from-yellow-500 to-amber-400", text: "text-yellow-400", icon: Activity },
+  Sell: { gradient: "from-orange-500 to-amber-500", text: "text-orange-400", icon: ArrowDownRight },
+  "Strong Sell": { gradient: "from-red-500 to-rose-500", text: "text-red-400", icon: AlertCircle },
 };
 
-function MetricCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function MetricCard({ label, value, sub, highlight = false, trend }: { label: string; value: string; sub?: string; highlight?: boolean, trend?: "up" | "down" }) {
   return (
-    <div className="bg-gray-800/60 rounded-xl p-4">
-      <p className="text-xs text-gray-400 mb-1">{label}</p>
-      <p className="text-base font-semibold text-white">{value}</p>
-      {sub && <p className="text-xs text-gray-500 mt-0.5">{sub}</p>}
+    <div className={`group relative p-4 rounded-2xl border transition-all duration-300 hover:scale-[1.02] ${
+      highlight 
+        ? "bg-primary/5 border-primary/20 shadow-lg shadow-primary/5" 
+        : "bg-surface-highlight/20 border-white/5 hover:bg-surface-highlight/40 hover:border-white/10"
+    }`}>
+      <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-2 opacity-70 group-hover:opacity-100 transition-opacity">{label}</p>
+      <div className="flex items-baseline gap-2">
+        <p className={`text-xl font-bold tracking-tight tabular-nums ${highlight ? "text-primary" : "text-text-primary"}`}>
+          {value}
+        </p>
+        {trend && (
+          <span className={`text-[10px] font-bold ${trend === "up" ? "text-success" : "text-danger"}`}>
+            {trend === "up" ? "↑" : "↓"}
+          </span>
+        )}
+      </div>
+      {sub && <p className="text-[10px] font-medium text-text-secondary/50 mt-1 leading-tight">{sub}</p>}
+      
+      {/* Subtle hover glow */}
+      <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity pointer-events-none ${highlight ? "bg-primary" : "bg-white"}`} />
     </div>
   );
 }
 
-function SectionHeader({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
+function SectionHeader({ icon: Icon, label, gradient = false, sub }: { icon: React.ElementType; label: string; gradient?: boolean; sub?: string }) {
   return (
-    <div className="flex items-center gap-2 mt-6 mb-3">
-      <Icon size={16} className="text-blue-400" />
-      <h3 className="text-sm font-semibold text-gray-200 uppercase tracking-wide">{label}</h3>
+    <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center gap-3">
+        <div className={`p-2 rounded-xl ${gradient ? "bg-primary/10 ring-1 ring-primary/20" : "bg-surface-highlight border border-white/5"}`}>
+          <Icon size={18} className={gradient ? "text-primary" : "text-text-secondary"} />
+        </div>
+        <div>
+          <h3 className={`text-sm font-black uppercase tracking-widest ${gradient ? "bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary" : "text-text-secondary"}`}>
+            {label}
+          </h3>
+          {sub && <p className="text-[10px] text-text-secondary/50 font-bold uppercase tracking-tighter">{sub}</p>}
+        </div>
+      </div>
     </div>
   );
 }
@@ -50,10 +78,13 @@ function pct(v: number | undefined, decimals = 1) {
 
 export default function StockDetail({ analysis }: Props) {
   const { addToWatchlist, removeFromWatchlist, watchlist } = useApp();
-  const [activePanel, setActivePanel] = useState<"detail" | "ai">("detail");
+  const [activeTab, setActiveTab] = useState<"quant" | "ai">("quant");
+  
   const inWatchlist = watchlist.some((w) => w.ticker === analysis.ticker);
-  const gradient = SCORE_GRADIENT[analysis.quantScoreLabel] ?? "from-gray-500 to-gray-400";
+  const config = SCORE_CONFIG[analysis.quantScoreLabel] ?? SCORE_CONFIG["Neutral"];
   const { famaFrench: ff, momentum: mom, volatility: vol, valueMetrics: val, profile } = analysis;
+  const change = profile?.changes ?? 0;
+  const changePositive = change >= 0;
 
   function toggleWatchlist() {
     if (inWatchlist) {
@@ -63,252 +94,237 @@ export default function StockDetail({ analysis }: Props) {
     }
   }
 
-  const change = profile?.changes ?? 0;
-  const changePositive = change >= 0;
-
   return (
-    <div className="max-w-3xl mx-auto px-4 pb-12">
-      {/* Header */}
-      <div className="flex items-start justify-between pt-6 pb-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-white">{analysis.ticker}</h1>
+    <div className="max-w-7xl mx-auto px-4 py-6 space-y-6 animate-slide-up">
+      {/* ─── Top Header Grid ──────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Ticker Info */}
+        <div className="lg:col-span-8 flex flex-col justify-center">
+          <div className="flex items-center gap-4 mb-2">
+            <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">{analysis.ticker}</h1>
             {profile?.exchange && (
-              <span className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded">{profile.exchange}</span>
+              <span className="px-2.5 py-1 rounded-md bg-surface-highlight border border-border text-xs font-bold text-text-secondary">
+                {profile.exchange}
+              </span>
             )}
+            <button
+              onClick={toggleWatchlist}
+              className={`ml-auto lg:ml-4 p-2 rounded-full transition-all ${
+                inWatchlist 
+                  ? "bg-primary/20 text-primary hover:bg-primary/30" 
+                  : "bg-surface-highlight text-text-secondary hover:text-white"
+              }`}
+            >
+              {inWatchlist ? <BookmarkCheck size={20} /> : <BookmarkPlus size={20} />}
+            </button>
           </div>
-          {profile?.companyName && (
-            <p className="text-gray-400 mt-0.5">{profile.companyName}</p>
-          )}
-          {profile?.sector && (
-            <p className="text-xs text-gray-500 mt-0.5">{profile.sector} · {profile.industry}</p>
-          )}
-        </div>
-        <div className="text-right">
-          {profile?.price !== undefined && (
-            <p className="text-2xl font-bold text-white">${profile.price.toFixed(2)}</p>
-          )}
-          {profile?.changes !== undefined && (
-            <p className={`text-sm font-medium ${changePositive ? "text-emerald-400" : "text-red-400"}`}>
-              {changePositive ? "+" : ""}{change.toFixed(2)} ({changePositive ? "+" : ""}{((change / (profile.price! - change)) * 100).toFixed(2)}%)
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Quant Score */}
-      <div className={`bg-gradient-to-r ${gradient} rounded-2xl p-5 flex items-center justify-between mb-5`}>
-        <div>
-          <p className="text-white/70 text-sm">Quant Score</p>
-          <p className="text-4xl font-black text-white">{analysis.quantScore.toFixed(0)}</p>
-          <p className="text-white/90 font-semibold mt-0.5">{analysis.quantScoreLabel}</p>
-        </div>
-        <div className="text-right">
-          {profile && (
-            <p className="text-white/80 text-sm">{marketCapFormatted(profile.mktCap)}</p>
-          )}
-          {analysis.claudeAnalysis && (
-            <div className="text-white/80 text-sm mt-1">
-              AI Score: {analysis.claudeAnalysis.aiAdjustedScore.toFixed(0)}
-            </div>
-          )}
-          <button
-            onClick={toggleWatchlist}
-            className="mt-3 flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-sm rounded-lg px-3 py-1.5 transition-colors"
-          >
-            {inWatchlist ? <BookmarkCheck size={15} /> : <BookmarkPlus size={15} />}
-            {inWatchlist ? "Watchlisted" : "Add to Watchlist"}
-          </button>
-        </div>
-      </div>
-
-      {/* Price Chart */}
-      <div className="bg-gray-800/60 rounded-xl p-4 mb-5">
-        <p className="text-xs text-gray-400 mb-3 uppercase tracking-wide">Price History (1 Year)</p>
-        <PriceChart data={analysis.priceHistory} />
-      </div>
-
-      {/* GBM Prediction Chart (multi-scenario) */}
-      {analysis.pricePrediction && (
-        <div className="bg-gray-800/60 rounded-xl p-4 mb-5">
-          <div className="flex items-center gap-2 mb-3">
-            <TrendingUp size={15} className="text-blue-400" />
-            <p className="text-xs text-gray-400 uppercase tracking-wide">30-Day Scenario Prediction</p>
-            {analysis.claudeAnalysis && (
-              <span className="ml-auto text-xs bg-purple-900/50 text-purple-300 border border-purple-700/50 rounded-md px-2 py-0.5">
-                {analysis.claudeAnalysis.selectedFormula} · {analysis.claudeAnalysis.riskMetric}
+          
+          <div className="flex flex-wrap items-baseline gap-4">
+            <h2 className="text-xl text-text-secondary font-medium truncate max-w-md">
+              {profile?.companyName ?? "Unknown Company"}
+            </h2>
+            {profile?.sector && (
+              <span className="text-sm text-text-secondary/60 font-medium px-2 border-l border-border">
+                {profile.sector}
               </span>
             )}
           </div>
-          <PredictionChart prediction={analysis.pricePrediction} />
-        </div>
-      )}
 
-      {/* Quant Composite Prediction Chart (single deterministic line) */}
-      {analysis.quantPricePath && (
-        <div className="bg-gray-800/60 rounded-xl p-4 mb-5">
-          <div className="flex items-center gap-2 mb-3">
-            <BarChart2 size={15} className="text-cyan-400" />
-            <p className="text-xs text-gray-400 uppercase tracking-wide">30-Day Quant Projection</p>
-            <span className="ml-auto text-xs bg-cyan-900/40 text-cyan-400 border border-cyan-700/40 rounded-md px-2 py-0.5">
-              Pure Quant
-            </span>
-          </div>
-          <QuantPredictionChart path={analysis.quantPricePath} />
-        </div>
-      )}
-
-      {/* Claude error banner */}
-      {analysis.claudeError && (
-        <div className="flex items-start gap-3 bg-orange-900/30 border border-orange-700/50 rounded-xl p-3 mb-4">
-          <AlertCircle size={15} className="text-orange-400 mt-0.5 shrink-0" />
-          <div>
-            <p className="text-sm text-orange-300 font-medium">AI Analysis Failed</p>
-            <p className="text-xs text-orange-400/80 mt-0.5">{analysis.claudeError}</p>
+          <div className="mt-6 flex items-baseline gap-4">
+            {profile?.price !== undefined && (
+              <span className="text-4xl font-bold text-text-primary tabular-nums">
+                ${profile.price.toFixed(2)}
+              </span>
+            )}
+            {change !== undefined && (
+              <span className={`text-lg font-semibold flex items-center gap-1 ${changePositive ? "text-success" : "text-danger"}`}>
+                {changePositive ? <ArrowUpRight size={20} /> : <ArrowDownRight size={20} />}
+                {Math.abs(change).toFixed(2)} ({Math.abs((change / (profile!.price! - change)) * 100).toFixed(2)}%)
+              </span>
+            )}
           </div>
         </div>
-      )}
 
-      {/* Panel tabs if AI available */}
-      {analysis.claudeAnalysis && (
-        <div className="flex gap-2 mb-5">
-          {(["detail", "ai"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActivePanel(tab)}
-              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                activePanel === tab
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-800 text-gray-400 hover:text-white"
-              }`}
-            >
-              {tab === "detail" ? "Quant Details" : "AI Analysis"}
-            </button>
-          ))}
+        {/* Quant Score Card */}
+        <div className="lg:col-span-4 relative group">
+          <div className={`absolute inset-0 bg-gradient-to-br ${config.gradient} opacity-20 blur-xl rounded-3xl group-hover:opacity-30 transition-opacity`} />
+          <div className="relative h-full bg-surface/80 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col justify-between overflow-hidden">
+            {/* Background Texture */}
+            <div className="absolute top-0 right-0 p-8 opacity-10">
+              <config.icon size={120} />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-bold text-text-secondary uppercase tracking-wider">Quant Confidence</span>
+                {analysis.claudeAnalysis && (
+                  <span className="text-[10px] font-bold bg-secondary/20 text-secondary px-2 py-0.5 rounded-full border border-secondary/20">
+                    AI Adjusted
+                  </span>
+                )}
+              </div>
+              <div className="flex items-end gap-2">
+                <span className={`text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r ${config.gradient}`}>
+                  {analysis.quantScore.toFixed(0)}
+                </span>
+                <span className="text-lg font-bold text-text-secondary mb-1.5">/ 100</span>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <div className="w-full bg-surface-highlight rounded-full h-2 mb-2 overflow-hidden">
+                <div 
+                  className={`h-full bg-gradient-to-r ${config.gradient} transition-all duration-1000 ease-out`} 
+                  style={{ width: `${analysis.quantScore}%` }}
+                />
+              </div>
+              <p className={`text-right font-bold ${config.text} uppercase tracking-widest text-sm`}>
+                {analysis.quantScoreLabel}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Main Charts Grid ─────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        {/* Main Price Chart */}
+        <div className="xl:col-span-8 glass-panel rounded-3xl p-6 min-h-[400px]">
+          <SectionHeader icon={BarChart2} label="Price Action (1Y)" sub="Historical Trend" />
+          <div className="mt-4">
+            <PriceChart data={analysis.priceHistory} />
+          </div>
+        </div>
+
+        {/* Prediction / Quant Chart */}
+        <div className="xl:col-span-4 flex flex-col gap-6">
+           {/* Prioritize Quant Path if available, else GBM */}
+           {analysis.quantPricePath ? (
+             <div className="glass-panel rounded-3xl p-6 flex-1">
+               <SectionHeader icon={Zap} label="Quant Projection" gradient sub="Composite Factor Analysis" />
+               <QuantPredictionChart path={analysis.quantPricePath} />
+             </div>
+           ) : analysis.pricePrediction ? (
+             <div className="glass-panel rounded-3xl p-6 flex-1">
+               <SectionHeader icon={TrendingUp} label="Scenario Forecast" sub="GBM Monte-Carlo" />
+               <PredictionChart prediction={analysis.pricePrediction} />
+             </div>
+           ) : null}
+        </div>
+      </div>
+
+      {/* ─── Tabs & Details ───────────────────────────────────────────────── */}
+      <div className="flex gap-4 border-b border-border pb-1">
+        <button
+          onClick={() => setActiveTab("quant")}
+          className={`px-4 py-2 text-sm font-bold transition-colors relative ${
+            activeTab === "quant" ? "text-primary" : "text-text-secondary hover:text-white"
+          }`}
+        >
+          Quantitative Data
+          {activeTab === "quant" && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary shadow-[0_0_10px_rgba(6,182,212,0.5)]" />}
+        </button>
+        {analysis.claudeAnalysis && (
+          <button
+            onClick={() => setActiveTab("ai")}
+            className={`px-4 py-2 text-sm font-bold transition-colors relative flex items-center gap-2 ${
+              activeTab === "ai" ? "text-secondary" : "text-text-secondary hover:text-white"
+            }`}
+          >
+            <Brain size={14} /> AI Analysis
+            {activeTab === "ai" && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-secondary shadow-[0_0_10px_rgba(139,92,246,0.5)]" />}
+          </button>
+        )}
+      </div>
+
+      {activeTab === "ai" && analysis.claudeAnalysis && (
+        <div className="animate-fade-in">
+          <AIAnalysis analysis={analysis.claudeAnalysis} />
         </div>
       )}
 
-      {/* AI Panel */}
-      {activePanel === "ai" && analysis.claudeAnalysis && (
-        <AIAnalysis analysis={analysis.claudeAnalysis} />
-      )}
-
-      {/* Quant Details Panel */}
-      {activePanel === "detail" && (
-        <>
-          {/* Fama-French */}
-          {ff && (
-            <>
-              <SectionHeader icon={BarChart2} label="Fama-French Five-Factor Betas" />
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <MetricCard label="Market β" value={fmt(ff.betas.marketBeta, 3)} sub={ff.betas.marketBeta > 1.2 ? "High Sensitivity" : ff.betas.marketBeta > 0.8 ? "Market-Like" : ff.betas.marketBeta > 0.4 ? "Defensive" : "Low Sensitivity"} />
-                <MetricCard label="Size SMB β" value={fmt(ff.betas.smbBeta, 3)} sub={ff.betas.smbBeta > 0 ? "Small-cap tilt" : "Large-cap tilt"} />
-                <MetricCard label="Value HML β" value={fmt(ff.betas.hmlBeta, 3)} sub={ff.betas.hmlBeta > 0 ? "Value tilt" : "Growth tilt"} />
-                <MetricCard label="Profitability RMW β" value={fmt(ff.rmwBeta, 3)} />
-                <MetricCard label="Investment CMA β" value={fmt(ff.cmaBeta, 3)} />
-                <MetricCard label="Alpha (ann.)" value={`${(ff.betas.alpha * 100).toFixed(2)}%`} />
-                <MetricCard label="R²" value={fmt(ff.betas.rSquared, 3)} />
-                <MetricCard label="FF5 Expected Return" value={`${((ff.expectedExcessReturn + ff.riskFreeRate) * 100).toFixed(2)}%`} sub="Annual, incl. Rf" />
-              </div>
-            </>
-          )}
-
-          {/* Momentum */}
-          {mom && (
-            <>
-              <SectionHeader icon={TrendingUp} label="Momentum" />
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <MetricCard label="12M Momentum" value={`${((mom.momentum12M - 1) * 100).toFixed(1)}%`} sub={mom.signal} />
-                <MetricCard label="6M Momentum" value={`${((mom.momentum6M - 1) * 100).toFixed(1)}%`} />
-                <MetricCard label="3M Momentum" value={`${((mom.momentum3M - 1) * 100).toFixed(1)}%`} />
-                <MetricCard label="1M Momentum" value={`${((mom.momentum1M - 1) * 100).toFixed(1)}%`} />
-              </div>
-            </>
-          )}
-
-          {/* Volatility */}
-          {vol && (
-            <>
-              <SectionHeader icon={Activity} label="Risk & Volatility" />
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <MetricCard label="Annualized Vol" value={pct(vol.annualizedVolatility)} sub={vol.riskLevel} />
-                <MetricCard label="30-Day Vol" value={pct(vol.volatility30D)} />
-                <MetricCard label="90-Day Vol" value={pct(vol.volatility90D)} />
-                <MetricCard label="Sharpe Ratio" value={fmt(vol.sharpeRatio)} />
-              </div>
-            </>
-          )}
-
-          {/* VaR / CVaR / GARCH */}
-          {analysis.riskMetrics && (() => {
-            const rm = analysis.riskMetrics!;
-            return (
-              <>
-                <SectionHeader icon={Shield} label="Value-at-Risk & Expected Shortfall" />
+      {activeTab === "quant" && (
+        <div className="space-y-6 animate-fade-in">
+          {/* Fama-French & Value Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Factor Exposure */}
+            {ff && (
+              <div className="glass-panel rounded-3xl p-6">
+                <SectionHeader icon={BarChart2} label="Factor Exposure" sub="Fama-French 5-Factor Model" />
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  <MetricCard label="VaR 95% (1-day)" value={pct(rm.var95)} sub="Historical" />
-                  <MetricCard label="VaR 99% (1-day)" value={pct(rm.var99)} sub="Historical" />
-                  <MetricCard label="CVaR 95%" value={pct(rm.cvar95)} sub="Exp. Shortfall" />
-                  <MetricCard label="CVaR 99%" value={pct(rm.cvar99)} sub="Exp. Shortfall" />
-                  <MetricCard label="GARCH Vol (ann.)" value={pct(rm.garchVol)} sub="GARCH(1,1)" />
+                  <MetricCard label="Market β" value={fmt(ff.betas.marketBeta, 2)} sub="Systematic Risk" highlight trend={ff.betas.marketBeta > 1.2 ? "up" : ff.betas.marketBeta < 0.8 ? "down" : undefined} />
+                  <MetricCard label="Size (SMB)" value={fmt(ff.betas.smbBeta, 2)} sub="Small Cap Tilt" />
+                  <MetricCard label="Value (HML)" value={fmt(ff.betas.hmlBeta, 2)} sub="Value Premium" />
+                  <MetricCard label="Profit (RMW)" value={fmt(ff.rmwBeta, 2)} sub="Quality Factor" />
+                  <MetricCard label="Inv (CMA)" value={fmt(ff.cmaBeta, 2)} sub="Investment Factor" />
+                  <MetricCard label="Alpha (α)" value={`${(ff.betas.alpha * 100).toFixed(2)}%`} sub="Excess Return" highlight trend={ff.betas.alpha > 0 ? "up" : "down"} />
                 </div>
-              </>
-            );
-          })()}
+              </div>
+            )}
 
-          {/* Kelly Criterion */}
-          {analysis.kelly && (() => {
-            const k = analysis.kelly!;
-            const halfPct = (k.halfKelly * 100).toFixed(1);
-            const fullPct = (k.fullKelly * 100).toFixed(1);
-            return (
-              <>
-                <SectionHeader icon={Calculator} label="Kelly Criterion (Position Sizing)" />
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <MetricCard label="Half Kelly" value={`${halfPct}%`} sub="Recommended sizing" />
-                  <MetricCard label="Full Kelly" value={`${fullPct}%`} sub="Raw (use with caution)" />
-                  <MetricCard label="Expected Return" value={pct(k.expectedReturn)} sub="Annual (incl. Rf)" />
-                  <MetricCard label="Variance" value={fmt(k.variance, 4)} sub="Annualised σ²" />
+            {/* Fundamentals */}
+            {val && (
+              <div className="glass-panel rounded-3xl p-6">
+                <SectionHeader icon={DollarSign} label="Fundamentals" sub="Valuation & Quality Metrics" />
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <MetricCard label="P/E Ratio" value={fmt(val.peRatio, 1)} sub="Earnings Multiple" />
+                  <MetricCard label="P/B Ratio" value={fmt(val.pbRatio, 2)} sub="Book Multiple" />
+                  <MetricCard label="ROE" value={pct(val.roe)} sub="Return on Equity" highlight trend={val.roe && val.roe > 0.15 ? "up" : undefined} />
+                  <MetricCard label="Debt/Eq" value={fmt(val.debtToEquity, 2)} sub="Leverage Ratio" />
+                  <MetricCard label="Div Yield" value={pct(val.dividendYield)} sub="Annual Yield" />
+                  <MetricCard label="Signal" value={val.valueSignal} sub="Investment Style" />
                 </div>
-              </>
-            );
-          })()}
+              </div>
+            )}
+          </div>
 
-          {/* Value Metrics */}
-          {val && (
-            <>
-              <SectionHeader icon={DollarSign} label="Value & Fundamentals" />
+          {/* Risk & Momentum Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Risk Metrics */}
+            <div className="glass-panel rounded-3xl p-6">
+              <SectionHeader icon={Shield} label="Risk Analysis" sub="Volatility & Tail Risk" />
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {val.bookToMarket !== undefined && (
-                  <MetricCard label="Book-to-Market" value={fmt(val.bookToMarket, 3)} sub={val.valueSignal} />
+                 {vol && <MetricCard label="Sharpe" value={fmt(vol.sharpeRatio)} sub="Risk-Adj. Return" highlight trend={vol.sharpeRatio > 1 ? "up" : undefined} />}
+                 {analysis.riskMetrics && (
+                   <>
+                     <MetricCard label="VaR (95%)" value={pct(analysis.riskMetrics.var95)} sub="Max Daily Loss" />
+                     <MetricCard label="CVaR (95%)" value={pct(analysis.riskMetrics.cvar95)} sub="Expected Tail Loss" />
+                     <MetricCard label="GARCH Vol" value={pct(analysis.riskMetrics.garchVol)} sub="Dynamic Vol" />
+                   </>
+                 )}
+                 {vol && <MetricCard label="Ann. Vol" value={pct(vol.annualizedVolatility)} sub="Yearly Sigma" />}
+                 {vol && <MetricCard label="Risk Level" value={vol.riskLevel} sub="Categorization" />}
+              </div>
+            </div>
+
+            {/* Momentum & Sizing */}
+            <div className="glass-panel rounded-3xl p-6">
+              <SectionHeader icon={Activity} label="Momentum & Sizing" sub="Trend Analysis & Allocation" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {mom && (
+                  <>
+                     <MetricCard label="12M Mom" value={pct(mom.momentum12M - 1)} sub="Yearly Trend" highlight trend={mom.momentum12M > 1 ? "up" : "down"} />
+                     <MetricCard label="3M Mom" value={pct(mom.momentum3M - 1)} sub="Quarterly Trend" trend={mom.momentum3M > 1 ? "up" : "down"} />
+                     <MetricCard label="Signal" value={mom.signal} sub="Trend Status" />
+                  </>
                 )}
-                {val.peRatio !== undefined && (
-                  <MetricCard label="P/E Ratio" value={fmt(val.peRatio, 1)} />
-                )}
-                {val.pbRatio !== undefined && (
-                  <MetricCard label="P/B Ratio" value={fmt(val.pbRatio, 2)} />
-                )}
-                {val.roe !== undefined && (
-                  <MetricCard label="ROE" value={pct(val.roe)} />
-                )}
-                {val.debtToEquity !== undefined && (
-                  <MetricCard label="Debt / Equity" value={fmt(val.debtToEquity, 2)} />
-                )}
-                {val.earningsYield !== undefined && (
-                  <MetricCard label="Earnings Yield" value={pct(val.earningsYield)} />
-                )}
-                {val.dividendYield !== undefined && (
-                  <MetricCard label="Dividend Yield" value={pct(val.dividendYield)} />
+                {analysis.kelly && (
+                  <>
+                     <MetricCard label="Kelly (Half)" value={`${(analysis.kelly.halfKelly * 100).toFixed(1)}%`} sub="Optimized Stake" highlight />
+                     <MetricCard label="Kelly (Full)" value={`${(analysis.kelly.fullKelly * 100).toFixed(1)}%`} sub="Max Theoretical" />
+                  </>
                 )}
               </div>
-            </>
-          )}
-        </>
+            </div>
+          </div>
+        </div>
       )}
 
-      <p className="text-xs text-gray-600 mt-8 text-center">
-        Analyzed {new Date(analysis.analyzedAt).toLocaleString()} · Not financial advice
-      </p>
+      <div className="flex justify-center pt-8 pb-4 opacity-50">
+         <p className="text-[10px] uppercase tracking-widest text-text-secondary">
+           Analyzed {new Date(analysis.analyzedAt).toLocaleString()} · Data via Polygon.io & FMP
+         </p>
+      </div>
     </div>
   );
 }

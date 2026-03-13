@@ -16,6 +16,8 @@ import type {
   RiskMetrics,
   ValueMetrics,
   VolatilityResult,
+  FormulaSet,
+  CorrelationInfo,
 } from "./types";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -211,6 +213,98 @@ function estimateCMABeta(balanceSheets: FMPBalanceSheet[]): number {
   if (growth < 0.2) return 0.0;
   if (growth < 0.3) return -0.2;
   return -0.5;
+}
+
+// ─── Formula Implementation ───────────────────────────────────────────────────
+
+export function computeFormulaResult(
+  type: FormulaSet,
+  stockReturns: DailyReturn[],
+  marketReturns: DailyReturn[],
+  smbReturns: DailyReturn[] | null,
+  hmlReturns: DailyReturn[] | null,
+  valueMetrics: ValueMetrics | undefined,
+  incomeStatements: FMPIncomeStatement[],
+  balanceSheets: FMPBalanceSheet[],
+  riskMetrics: RiskMetrics | null,
+  volatility: VolatilityResult | null,
+  ticker: string
+): FamaFrenchResult | null {
+  const ff5 = computeFamaFrenchFiveFactor(
+    stockReturns,
+    marketReturns,
+    smbReturns,
+    hmlReturns,
+    valueMetrics,
+    incomeStatements,
+    balanceSheets,
+    ticker
+  );
+  if (!ff5) return null;
+
+  let expectedReturn = ff5.expectedExcessReturn;
+
+  switch (type) {
+    case "CAPM":
+      expectedReturn = ff5.betas.marketBeta * MARKET_PREMIUM;
+      break;
+    case "FF3":
+      expectedReturn =
+        ff5.betas.marketBeta * MARKET_PREMIUM +
+        ff5.betas.smbBeta * SMB_PREMIUM +
+        ff5.betas.hmlBeta * HML_PREMIUM;
+      break;
+    case "FF5":
+      // Already calculated
+      break;
+    case "APT":
+      // APT typically includes more macro factors.
+      // Here we use FF5 as a base and add a small macro-sensitivity alpha
+      expectedReturn = ff5.expectedExcessReturn + 0.01;
+      break;
+    case "SVJ": {
+      // Stochastic Volatility + Jump
+      // Estimate jump intensity from fat tails
+      const returns = stockReturns.map(r => r.returnValue);
+      const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
+      const std = Math.sqrt(returns.reduce((a, b) => a + (b - mean) ** 2, 0) / returns.length);
+      const jumps = returns.filter(r => Math.abs(r - mean) > 3 * std);
+      const jumpIntensity = jumps.length / returns.length;
+      const jumpDrift = jumpIntensity * (jumps.reduce((a, b) => a + b, 0) / (jumps.length || 1)) * 252;
+      expectedReturn = ff5.expectedExcessReturn + jumpDrift;
+      break;
+    }
+    case "Factor-Kelly": {
+      // Adjust drift by log-optimal sizing fraction
+      if (volatility) {
+        const annualVar = volatility.annualizedVolatility ** 2;
+        const kellyFraction = annualVar > 0 ? (ff5.expectedExcessReturn + ANNUAL_RISK_FREE_RATE) / annualVar : 0;
+        // Conservative 0.5 Kelly adjustment to drift
+        expectedReturn = ff5.expectedExcessReturn + 0.5 * kellyFraction * annualVar;
+      }
+      break;
+    }
+    case "GARCH-BS": {
+      // Uses GARCH volatility for Black-Scholes drift adjustment
+      if (riskMetrics) {
+        const garchVar = riskMetrics.garchVol ** 2;
+        expectedReturn = ff5.expectedExcessReturn + 0.5 * garchVar;
+      }
+      break;
+    }
+    case "Tail-CVaR": {
+      // Penalise drift for high tail risk
+      if (riskMetrics) {
+        expectedReturn = ff5.expectedExcessReturn - (riskMetrics.cvar95 * 0.1 * 252);
+      }
+      break;
+    }
+  }
+
+  return {
+    ...ff5,
+    expectedExcessReturn: expectedReturn,
+  };
 }
 
 // ─── Fama-French ──────────────────────────────────────────────────────────────
@@ -719,6 +813,7 @@ export function computeQuantPricePath(
     vix: DailyReturn[] | null;
     gold: DailyReturn[] | null;
   },
+  correlatedStocks?: { ticker: string; returns: DailyReturn[]; correlation: number }[],
   forecastDays = 30
 ): QuantPricePath | null {
   if (priceHistory.length < 10) return null;
@@ -730,11 +825,12 @@ export function computeQuantPricePath(
   const currentPrice = sorted[sorted.length - 1].price;
   const lastDate = new Date(sorted[sorted.length - 1].date);
 
-  // ── Signal 1: FF5 (30% weight) ──────────────────────────────────────────
-  const ff5Annual = famaFrench
+  // ── Signal 1: Formula Drift (30% weight) ───────────────────────────────────
+  // Uses the AI-selected formula expected return
+  const formulaAnnual = famaFrench
     ? famaFrench.expectedExcessReturn + ANNUAL_RISK_FREE_RATE
     : ANNUAL_RISK_FREE_RATE + MARKET_PREMIUM * 0.8;
-  const ff5Daily = ff5Annual / 252;
+  const formulaDaily = formulaAnnual / 252;
 
   // ── Signal 2: Momentum (25% weight) ─────────────────────────────────────
   const rawMom3M = momentum?.momentum3M ?? 1.0;
@@ -746,8 +842,10 @@ export function computeQuantPricePath(
   );
   const momDaily = momAnnual / 252;
 
-  // ── Signal 3: Macro (20% weight) ────────────────────────────────────────
+  // ── Signal 3: Macro & Correlations (20% weight) ─────────────────────────
   let macroAnnual = 0;
+  const correlations: CorrelationInfo[] = [];
+
   if (macroData) {
     const assets = [
       { name: "Oil", returns: macroData.oil },
@@ -776,9 +874,26 @@ export function computeQuantPricePath(
 
       // Recent trend (last 21 days)
       const trend = asset.returns.slice(-21).reduce((a, b) => a + b.returnValue, 0) * (252 / 21);
-      macroAnnual += corr * trend * 0.5; // Scaled impact
+      macroAnnual += corr * trend * 0.25; // Scaled impact
     }
   }
+
+  // Add 10 correlated stocks
+  if (correlatedStocks && correlatedStocks.length > 0) {
+    for (const stock of correlatedStocks) {
+      const trend = stock.returns.slice(-21).reduce((a, b) => a + b.returnValue, 0) * (252 / 21);
+      const contribution = stock.correlation * trend * 0.1; // 10% weight spread across peers
+      macroAnnual += contribution;
+
+      correlations.push({
+        ticker: stock.ticker,
+        correlation: stock.correlation,
+        impact: contribution > 0 ? "Positive" : contribution < 0 ? "Negative" : "Neutral",
+        explanation: `Pearson r = ${stock.correlation.toFixed(2)}. Recent trend in ${stock.ticker} contributes ${contribution > 0 ? "upside" : "downside"} to the composite drift.`,
+      });
+    }
+  }
+
   macroAnnual = Math.min(Math.max(macroAnnual, -0.30), 0.30);
   const macroDaily = macroAnnual / 252;
 
@@ -796,9 +911,9 @@ export function computeQuantPricePath(
   const scoreDaily = scoreAlphaAnnual / 252;
 
   // ── Composite weighted daily return ─────────────────────────────────────
-  const W = { FF5: 0.30, MOM: 0.25, MACRO: 0.20, RISK: 0.15, SCR: 0.10 };
+  const W = { FORMULA: 0.30, MOM: 0.25, MACRO: 0.20, RISK: 0.15, SCR: 0.10 };
   const compositeDaily =
-    W.FF5 * ff5Daily +
+    W.FORMULA * formulaDaily +
     W.MOM * momDaily +
     W.MACRO * macroDaily +
     W.RISK * riskDaily +
@@ -830,20 +945,21 @@ export function computeQuantPricePath(
     currentPrice,
     expectedReturn30d: expected30d,
     annualDrift: compositeAnnual,
-    methodology: "Multi-Factor Quant Blend (FF5, Momentum, Macro, Risk, Score)",
+    methodology: "Multi-Factor Quant Blend (Selected Formula, Momentum, Peer Correlation, Risk, Score)",
     signals: {
-      ff5Weight: W.FF5,
+      ff5Weight: W.FORMULA,
       momentumWeight: W.MOM,
       scoreWeight: W.SCR,
       macroWeight: W.MACRO,
       riskWeight: W.RISK,
-      ff5AnnualReturn: ff5Annual,
+      ff5AnnualReturn: formulaAnnual,
       momentum3MAnnualised: momAnnual,
       scoreAlphaAnnual,
       macroAnnualReturn: macroAnnual,
       riskAdjustedAnnualReturn: riskAdjAnnual,
       compositeDailyReturn: compositeDaily,
     },
+    correlations,
   };
 }
 

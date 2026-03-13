@@ -1,6 +1,6 @@
 "use client";
 import { useEffect } from "react";
-import { Search, Bookmark, BarChart2, Settings as SettingsIcon, TrendingUp } from "lucide-react";
+import { Search, Bookmark, BarChart2, Settings as SettingsIcon, TrendingUp, Menu } from "lucide-react";
 import { useApp } from "@/lib/context";
 import StockSearch from "@/components/StockSearch";
 import Watchlist from "@/components/Watchlist";
@@ -10,10 +10,9 @@ import Settings from "@/components/Settings";
 type Tab = "search" | "watchlist" | "market" | "settings";
 
 const NAV_ITEMS: { id: Tab; label: string; icon: React.ElementType }[] = [
-  { id: "search", label: "Analyze", icon: Search },
+  { id: "search", label: "Analysis", icon: Search },
   { id: "watchlist", label: "Watchlist", icon: Bookmark },
   { id: "market", label: "Market", icon: BarChart2 },
-  { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
 
 export default function HomePage() {
@@ -36,44 +35,91 @@ export default function HomePage() {
   }, [setActiveTab]);
 
   return (
-    <div className="flex h-screen bg-gray-950 overflow-hidden">
-      {/* Sidebar */}
-      <aside className="w-16 sm:w-20 flex flex-col items-center py-5 bg-gray-900 border-r border-gray-800 shrink-0">
-        {/* Logo */}
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mb-6">
-          <TrendingUp size={18} className="text-white" />
+    <div className="flex h-screen bg-background text-text-primary overflow-hidden selection:bg-primary/20">
+      {/* ─── Sidebar ──────────────────────────────────────────────────────── */}
+      <aside className="w-20 lg:w-64 flex flex-col border-r border-border bg-surface/50 backdrop-blur-xl shrink-0 transition-all duration-300 z-50">
+        {/* Brand */}
+        <div className="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-border/50">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+            <TrendingUp size={18} className="text-white" strokeWidth={2.5} />
+          </div>
+          <span className="hidden lg:block ml-3 font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">
+            StocklyQuant
+          </span>
         </div>
 
-        {/* Nav */}
-        <nav className="flex flex-col gap-1 w-full px-2">
-          {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => setActiveTab(id)}
-              className={`relative flex flex-col items-center gap-1 py-3 px-1 rounded-xl text-xs transition-colors ${
-                activeTab === id
-                  ? "bg-blue-600/20 text-blue-400"
-                  : "text-gray-500 hover:text-gray-300 hover:bg-gray-800"
-              }`}
-            >
-              <Icon size={20} />
-              <span className="hidden sm:block">{label}</span>
-              {id === "watchlist" && watchlist.length > 0 && (
-                <span className="absolute top-2 right-2 w-4 h-4 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                  {watchlist.length > 9 ? "9+" : watchlist.length}
+        {/* Navigation */}
+        <nav className="flex-1 flex flex-col gap-2 p-3 mt-4">
+          {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
+            const isActive = activeTab === id;
+            return (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id)}
+                className={`relative group flex items-center gap-3 px-3 lg:px-4 py-3 rounded-xl transition-all duration-200 ${
+                  isActive
+                    ? "bg-primary/10 text-primary shadow-[0_0_20px_rgba(6,182,212,0.1)]"
+                    : "text-text-secondary hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <Icon
+                  size={22}
+                  className={`transition-transform duration-200 ${isActive ? "scale-110" : "group-hover:scale-110"}`}
+                  strokeWidth={isActive ? 2.5 : 2}
+                />
+                <span className={`hidden lg:block text-sm font-medium ${isActive ? "text-primary" : ""}`}>
+                  {label}
                 </span>
-              )}
-            </button>
-          ))}
+                
+                {/* Active Indicator Bar */}
+                {isActive && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
+                )}
+
+                {/* Watchlist Count Badge */}
+                {id === "watchlist" && watchlist.length > 0 && (
+                  <span className={`absolute top-2 right-2 lg:top-1/2 lg:-translate-y-1/2 lg:right-4 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full text-[10px] font-bold ring-2 ring-background ${
+                    isActive ? "bg-primary text-background" : "bg-surface-highlight text-text-secondary"
+                  }`}>
+                    {watchlist.length > 9 ? "9+" : watchlist.length}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </nav>
+
+        {/* Footer / Settings */}
+        <div className="p-3 border-t border-border/50">
+          <button
+            onClick={() => setActiveTab("settings")}
+            className={`w-full flex items-center gap-3 px-3 lg:px-4 py-3 rounded-xl transition-colors ${
+              activeTab === "settings"
+                ? "bg-surface-highlight text-white"
+                : "text-text-secondary hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <SettingsIcon size={22} strokeWidth={activeTab === "settings" ? 2.5 : 2} />
+            <span className="hidden lg:block text-sm font-medium">Settings</span>
+          </button>
+        </div>
       </aside>
 
-      {/* Main content */}
-      <main className="flex-1 overflow-y-auto">
-        {activeTab === "search" && <StockSearch />}
-        {activeTab === "watchlist" && <Watchlist />}
-        {activeTab === "market" && <MarketDashboard />}
-        {activeTab === "settings" && <Settings />}
+      {/* ─── Main Content ─────────────────────────────────────────────────── */}
+      <main className="flex-1 relative overflow-hidden bg-gradient-to-br from-background via-background to-surface-highlight/20">
+        {/* Ambient Glow Effects */}
+        <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-secondary/5 rounded-full blur-[120px] pointer-events-none" />
+
+        {/* Scrollable Area */}
+        <div className="h-full overflow-y-auto scroll-smooth relative z-10">
+          <div className="max-w-7xl mx-auto h-full">
+            {activeTab === "search" && <StockSearch />}
+            {activeTab === "watchlist" && <Watchlist />}
+            {activeTab === "market" && <MarketDashboard />}
+            {activeTab === "settings" && <Settings />}
+          </div>
+        </div>
       </main>
     </div>
   );

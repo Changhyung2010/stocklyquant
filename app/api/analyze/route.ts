@@ -24,6 +24,8 @@ import {
   computeQuantPricePath,
   quantScoreLabel,
   computeReturnsFromPrices,
+  computeFormulaResult,
+  alignReturns,
   ANNUAL_RISK_FREE_RATE,
 } from "@/lib/quantCalculator";
 
@@ -429,6 +431,54 @@ export async function POST(req: NextRequest) {
         const stockReturns: DailyReturn[] = computeReturnsFromPrices(stockBars);
         const marketReturns: DailyReturn[] = computeReturnsFromPrices(spyBars);
 
+        // Fetch Peers for correlation
+        let correlatedStocks: { ticker: string; returns: DailyReturn[]; correlation: number }[] = [];
+        const peerContext = profile?.industry || profile?.sector || "Technology";
+        try {
+          const peers = await fmpGet<{ symbol: string }[]>(
+            `/stock-screener?${profile?.industry ? `industry=${encodeURIComponent(profile.industry)}` : `sector=${encodeURIComponent(profile?.sector || "Technology")}`}&limit=15`,
+            fmpKey
+          );
+          const peerTickers = peers
+            .map((p) => p.symbol)
+            .filter((t) => t !== ticker)
+            .slice(0, 12);
+
+          const peerHistories = await Promise.all(
+            peerTickers.map((t) =>
+              fetchPolygonBars(t, dateOffset(365), to, polygonKey).catch(() => null)
+            )
+          );
+
+          for (let i = 0; i < peerHistories.length; i++) {
+              const hist = peerHistories[i];
+              if (!hist || hist.length < 60) continue;
+              const pReturns = computeReturnsFromPrices(hist);
+              const { stock: sR, market: pR } = alignReturns(stockReturns, pReturns);
+              if (sR.length < 30) continue;
+
+              // Pearson correlation
+              const meanS = sR.reduce((a: number, b: number) => a + b, 0) / sR.length;
+              const meanP = pR.reduce((a: number, b: number) => a + b, 0) / pR.length;
+              let num = 0, denS = 0, denP = 0;
+              for (let j = 0; j < sR.length; j++) {
+                const ds = sR[j] - meanS;
+                const dp = pR[j] - meanP;
+                num += ds * dp;
+                denS += ds * ds;
+                denP += dp * dp;
+              }
+              const corr = denS > 0 && denP > 0 ? num / Math.sqrt(denS * denP) : 0;
+              correlatedStocks.push({ ticker: peerTickers[i], returns: pReturns, correlation: corr });
+            }
+            // Sort by absolute correlation and take top 10
+            correlatedStocks = correlatedStocks
+              .sort((a, b) => Math.abs(b.correlation) - Math.abs(a.correlation))
+              .slice(0, 10);
+          } catch (err) {
+            console.error("[Peers]", err);
+          }
+
         // SMB proxy: IWM - SPY
         let smbReturns: DailyReturn[] | null = null;
         if (iwmBars) {
@@ -473,7 +523,12 @@ export async function POST(req: NextRequest) {
           valueSignal,
         };
 
-        const famaFrench = computeFamaFrenchFiveFactor(
+        const momentum = computeMomentum(stockBars);
+        const volatility = computeVolatility(stockBars);
+        const riskMetrics = computeRiskMetrics(stockBars);
+
+        const famaFrench = computeFormulaResult(
+          claudeAnalysis?.selectedFormula ?? "FF5",
           stockReturns,
           marketReturns,
           smbReturns,
@@ -481,11 +536,10 @@ export async function POST(req: NextRequest) {
           valueMetrics,
           incomeArr,
           balanceArr,
+          riskMetrics,
+          volatility,
           ticker
         );
-        const momentum = computeMomentum(stockBars);
-        const volatility = computeVolatility(stockBars);
-        const riskMetrics = computeRiskMetrics(stockBars);
 
         // Base quant score with default 30/25/20/15/10 weights
         const quantScore = computeQuantScore({ momentum, valueMetrics, famaFrench, volatility });
@@ -498,7 +552,7 @@ export async function POST(req: NextRequest) {
           return computeKelly(expectedReturn, annualVol * annualVol);
         })();
 
-        // Price prediction (GBM using FF5 drift + GARCH vol)
+        // Price prediction (GBM using selected formula drift + GARCH vol)
         const pricePrediction = computePricePrediction(
           stockBars,
           famaFrench,
@@ -520,7 +574,8 @@ export async function POST(req: NextRequest) {
           momentum,
           quantScore,
           riskMetrics,
-          macroReturns
+          macroReturns,
+          correlatedStocks
         ) ?? undefined;
 
         // Recalculate score with Claude's recommended weights (engine does all calculations)

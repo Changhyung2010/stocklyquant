@@ -220,6 +220,13 @@ export interface QuantPathPoint {
   quant?: number;
 }
 
+export interface CorrelationInfo {
+  ticker: string;
+  correlation: number;
+  impact: "Positive" | "Negative" | "Neutral";
+  explanation: string;
+}
+
 export interface QuantPricePath {
   points: QuantPathPoint[];
   currentPrice: number;
@@ -243,6 +250,7 @@ export interface QuantPricePath {
     riskAdjustedAnnualReturn: number;
     compositeDailyReturn: number;
   };
+  correlations: CorrelationInfo[];
 }
 
 // ─── Price Prediction ─────────────────────────────────────────────────────────

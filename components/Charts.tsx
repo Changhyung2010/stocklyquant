@@ -322,7 +322,7 @@ export function QuantPredictionChart({ path }: QuantPredictionChartProps) {
 
   const { signals } = path;
   const signalRows = [
-    { label: "FF5 Factor", weight: signals.ff5Weight, val: signals.ff5AnnualReturn, color: "from-blue-500 to-indigo-600" },
+    { label: "Formula Alpha", weight: signals.ff5Weight, val: signals.ff5AnnualReturn, color: "from-blue-500 to-indigo-600" },
     { label: "Momentum", weight: signals.momentumWeight, val: signals.momentum3MAnnualised, color: "from-emerald-500 to-teal-600" },
     { label: "Macro Impact", weight: signals.macroWeight, val: signals.macroAnnualReturn, color: "from-amber-500 to-orange-600" },
     { label: "Risk Regime", weight: signals.riskWeight, val: signals.riskAdjustedAnnualReturn, color: "from-rose-500 to-red-600" },
@@ -472,6 +472,29 @@ export function QuantPredictionChart({ path }: QuantPredictionChartProps) {
                 Target (30d) = ${path.currentPrice.toFixed(2)} × (1 + {signals.compositeDailyReturn.toFixed(6)})³⁰ = <span className="text-white">${(path.currentPrice * (1 + path.expectedReturn30d)).toFixed(2)}</span>
               </p>
             </div>
+
+            {path.correlations && path.correlations.length > 0 && (
+              <div className="mt-6 pt-6 border-t border-gray-800">
+                <h5 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Peer Industry Correlations (Top 10)</h5>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {path.correlations.map((c) => (
+                    <div key={c.ticker} className="bg-black/20 border border-gray-800/50 rounded-xl p-3">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm font-bold text-gray-200">{c.ticker}</span>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                          c.impact === "Positive" ? "bg-emerald-500/10 text-emerald-400" : 
+                          c.impact === "Negative" ? "bg-rose-500/10 text-rose-400" : 
+                          "bg-gray-500/10 text-gray-400"
+                        }`}>
+                          {c.impact} Impact
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-gray-500 leading-relaxed">{c.explanation}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
