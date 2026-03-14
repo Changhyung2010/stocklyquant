@@ -275,20 +275,24 @@ export function computeFormulaResult(
       break;
     }
     case "Factor-Kelly": {
-      // Adjust drift by log-optimal sizing fraction
+      // Use half-Kelly fraction to scale the excess return (position sizing inspiration,
+      // not raw drift amplification). Clamp to [0, 2] to avoid extreme values.
       if (volatility) {
         const annualVar = volatility.annualizedVolatility ** 2;
         const kellyFraction = annualVar > 0 ? (ff5.expectedExcessReturn + ANNUAL_RISK_FREE_RATE) / annualVar : 0;
-        // Conservative 0.5 Kelly adjustment to drift
-        expectedReturn = ff5.expectedExcessReturn + 0.5 * kellyFraction * annualVar;
+        const halfKelly = Math.min(Math.max(kellyFraction * 0.5, 0), 2.0);
+        expectedReturn = ff5.expectedExcessReturn * halfKelly;
       }
       break;
     }
     case "GARCH-BS": {
-      // Uses GARCH volatility for Black-Scholes drift adjustment
+      // GARCH-BS: Use FF5 base return but adjust for vol regime.
+      // If GARCH vol > historical vol, penalise drift (uncertainty tax).
       if (riskMetrics) {
         const garchVar = riskMetrics.garchVol ** 2;
-        expectedReturn = ff5.expectedExcessReturn + 0.5 * garchVar;
+        const histVar = (volatility?.annualizedVolatility ?? riskMetrics.garchVol) ** 2;
+        const volDiff = garchVar - histVar;
+        expectedReturn = ff5.expectedExcessReturn - Math.max(volDiff, 0) * 0.5;
       }
       break;
     }
@@ -352,8 +356,8 @@ export function computeFamaFrench(
     hasSMB && hasHML && reg.coefficients.length > 3
       ? reg.coefficients[3]
       : !hasSMB && hasHML && reg.coefficients.length > 2
-      ? reg.coefficients[2]
-      : 0;
+        ? reg.coefficients[2]
+        : 0;
 
   if (!hasSMB) smbBeta = estimateSMBBeta(marketBeta);
   if (!hasHML) hmlBeta = estimateHMLBeta(valueMetrics);
@@ -433,7 +437,7 @@ export function computeMomentum(priceHistory: PricePoint[]): MomentumResult | nu
     let best = sorted[0];
     for (const p of sorted) {
       if (Math.abs(new Date(p.date).getTime() - target) <
-          Math.abs(new Date(best.date).getTime() - target)) {
+        Math.abs(new Date(best.date).getTime() - target)) {
         best = p;
       }
     }
@@ -534,13 +538,13 @@ export function computeQuantScore(
   weights?: Partial<ScoreWeights>
 ): number {
   const raw = {
-    momentum:   weights?.momentum   ?? DEFAULT_WEIGHTS.momentum,
-    value:      weights?.value      ?? DEFAULT_WEIGHTS.value,
-    quality:    weights?.quality    ?? DEFAULT_WEIGHTS.quality,
-    size:       weights?.size       ?? DEFAULT_WEIGHTS.size,
+    momentum: weights?.momentum ?? DEFAULT_WEIGHTS.momentum,
+    value: weights?.value ?? DEFAULT_WEIGHTS.value,
+    quality: weights?.quality ?? DEFAULT_WEIGHTS.quality,
+    size: weights?.size ?? DEFAULT_WEIGHTS.size,
     volatility: weights?.volatility ?? DEFAULT_WEIGHTS.volatility,
   };
-  
+
   // Re-normalize weights based on available data
   const available = {
     momentum: !!params.momentum,
@@ -560,10 +564,10 @@ export function computeQuantScore(
   if (activeTotal === 0) return 50; // Fallback if no data
 
   const w = {
-    momentum:   available.momentum ? raw.momentum / activeTotal : 0,
-    value:      available.value ? raw.value / activeTotal : 0,
-    quality:    available.quality ? raw.quality / activeTotal : 0,
-    size:       available.size ? raw.size / activeTotal : 0,
+    momentum: available.momentum ? raw.momentum / activeTotal : 0,
+    value: available.value ? raw.value / activeTotal : 0,
+    quality: available.quality ? raw.quality / activeTotal : 0,
+    size: available.size ? raw.size / activeTotal : 0,
     volatility: available.volatility ? raw.volatility / activeTotal : 0,
   };
 
@@ -675,7 +679,7 @@ export function computeRiskMetrics(priceHistory: PricePoint[]): RiskMetrics | nu
   // then annualise it.
   const omega = 1e-6;
   const alpha = 0.09;
-  const beta  = 0.90;
+  const beta = 0.90;
 
   const meanRet = returns.reduce((s, r) => s + r, 0) / returns.length;
   const sampleVar = returns.reduce((s, r) => s + (r - meanRet) ** 2, 0) / returns.length;
@@ -774,10 +778,10 @@ export function computePricePrediction(
     forecastPoints.push({
       date: dateStr,
       expected: snap(currentPrice * Math.exp(logDrift)),
-      upper95:  snap(currentPrice * Math.exp(logDrift + 1.645 * diffusion)),
-      lower95:  snap(currentPrice * Math.exp(logDrift - 1.645 * diffusion)),
-      bull:     snap(currentPrice * Math.exp(logDrift + 0.5  * diffusion)),
-      bear:     snap(currentPrice * Math.exp(logDrift - 0.5  * diffusion)),
+      upper95: snap(currentPrice * Math.exp(logDrift + 1.645 * diffusion)),
+      lower95: snap(currentPrice * Math.exp(logDrift - 1.645 * diffusion)),
+      bull: snap(currentPrice * Math.exp(logDrift + 0.5 * diffusion)),
+      bear: snap(currentPrice * Math.exp(logDrift - 0.5 * diffusion)),
     });
   }
 
@@ -789,8 +793,8 @@ export function computePricePrediction(
     points: [...histPoints, ...forecastPoints],
     currentPrice,
     expectedReturn30d: Math.exp(logDrift30) - 1,
-    upperBound30d:     Math.exp(logDrift30 + 1.645 * diffusion30) - 1,
-    lowerBound30d:     Math.exp(logDrift30 - 1.645 * diffusion30) - 1,
+    upperBound30d: Math.exp(logDrift30 + 1.645 * diffusion30) - 1,
+    lowerBound30d: Math.exp(logDrift30 - 1.645 * diffusion30) - 1,
     dailyVol,
     annualDrift,
     formulaUsed: riskMetrics
@@ -940,7 +944,7 @@ export function computeQuantPricePath(
     W.MACRO * macroDaily +
     W.RISK * riskDaily +
     W.SCR * scoreDaily;
-  
+
   // Cap daily drift to +/- 2% (approx 500% annualized) to prevent UI-breaking exponential growth
   compositeDaily = Math.min(Math.max(compositeDaily, -0.02), 0.02);
   const compositeAnnual = compositeDaily * 252;

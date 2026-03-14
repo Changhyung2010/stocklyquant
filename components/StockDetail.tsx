@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
-import { 
-  BookmarkPlus, BookmarkCheck, TrendingUp, Activity, DollarSign, 
+import {
+  BookmarkPlus, BookmarkCheck, TrendingUp, Activity, DollarSign,
   BarChart2, AlertCircle, Shield, Calculator, Zap, ArrowUpRight, ArrowDownRight, Brain
 } from "lucide-react";
 import type { QuantAnalysis } from "@/lib/types";
@@ -24,11 +24,10 @@ const SCORE_CONFIG: Record<string, { gradient: string; text: string; icon: any }
 
 function MetricCard({ label, value, sub, highlight = false, trend }: { label: string; value: string; sub?: string; highlight?: boolean, trend?: "up" | "down" }) {
   return (
-    <div className={`group relative p-4 rounded-2xl border transition-all duration-300 hover:translate-y-[-2px] ${
-      highlight 
-        ? "bg-primary/5 border-primary/20 shadow-lg shadow-primary/5" 
+    <div className={`group relative p-4 rounded-2xl border transition-all duration-300 hover:translate-y-[-2px] ${highlight
+        ? "bg-primary/5 border-primary/20 shadow-lg shadow-primary/5"
         : "bg-surface-highlight/40 border-white/5 hover:bg-surface-highlight/60 hover:border-white/10"
-    }`}>
+      }`}>
       <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-2 opacity-60 group-hover:opacity-100 transition-opacity">{label}</p>
       <div className="flex items-baseline gap-2">
         <p className={`text-xl font-bold tracking-tight tabular-nums ${highlight ? "text-primary" : "text-text-primary"}`}>
@@ -77,16 +76,16 @@ export default function StockDetail({ analysis }: Props) {
   const { addToWatchlist, removeFromWatchlist, watchlist } = useApp();
   const [activeTab, setActiveTab] = useState<"quant" | "ai">("quant");
   const [showAiScore, setShowAiScore] = useState(true);
-  
+
   if (!analysis) return null;
 
   const inWatchlist = watchlist?.some((w) => w.ticker === analysis.ticker);
-  
+
   // Choose which score to display primarily
   const hasAiScore = !!analysis.claudeAnalysis?.aiAdjustedScore;
   const currentScore = (hasAiScore && showAiScore) ? analysis.claudeAnalysis!.aiAdjustedScore : analysis.quantScore;
   const currentLabel = (hasAiScore && showAiScore) ? analysis.quantScoreLabel : analysis.quantScoreLabel; // Labels are same for now
-  
+
   const config = SCORE_CONFIG[analysis.quantScoreLabel] ?? SCORE_CONFIG["Neutral"];
   const { famaFrench: ff, momentum: mom, volatility: vol, valueMetrics: val, profile } = analysis;
   const change = profile?.changes ?? 0;
@@ -122,16 +121,15 @@ export default function StockDetail({ analysis }: Props) {
             </div>
             <button
               onClick={toggleWatchlist}
-              className={`ml-auto p-3 rounded-2xl transition-all ${
-                inWatchlist 
-                  ? "bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5" 
+              className={`ml-auto p-3 rounded-2xl transition-all ${inWatchlist
+                  ? "bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5"
                   : "bg-surface-highlight/50 text-text-secondary border border-white/5 hover:text-white hover:bg-surface-highlight"
-              }`}
+                }`}
             >
               {inWatchlist ? <BookmarkCheck size={22} /> : <BookmarkPlus size={22} />}
             </button>
           </div>
-          
+
           <h2 className="text-xl md:text-2xl text-text-secondary font-semibold tracking-tight mb-8">
             {profile?.companyName ?? "Unknown Company"}
           </h2>
@@ -145,11 +143,14 @@ export default function StockDetail({ analysis }: Props) {
                 </span>
                 <span className={`text-xl font-bold flex items-center gap-1 ${changePositive ? "text-success" : "text-danger"}`}>
                   {changePositive ? <ArrowUpRight size={20} strokeWidth={3} /> : <ArrowDownRight size={20} strokeWidth={3} />}
-                  {profile?.price ? Math.abs((change / (profile.price - change)) * 100).toFixed(2) : 0}%
+                  {(() => {
+                    const prevPrice = (profile?.price ?? 0) - change;
+                    return prevPrice !== 0 ? Math.abs((change / prevPrice) * 100).toFixed(2) : "0.00";
+                  })()}%
                 </span>
               </div>
             </div>
-            
+
             <div className="h-12 w-px bg-white/5 mx-2 hidden sm:block" />
 
             <div className="space-y-1 hidden sm:block">
@@ -176,16 +177,16 @@ export default function StockDetail({ analysis }: Props) {
                   <Zap size={16} className="text-primary" fill="currentColor" />
                   <span className="text-xs font-black text-text-secondary uppercase tracking-[0.2em]">Quant Confidence</span>
                 </div>
-                
+
                 {hasAiScore && (
                   <div className="flex bg-black/40 p-1 rounded-xl border border-white/5">
-                    <button 
+                    <button
                       onClick={() => setShowAiScore(false)}
                       className={`px-3 py-1 text-[10px] font-bold rounded-lg transition-all ${!showAiScore ? "bg-surface-highlight text-white shadow-lg" : "text-text-secondary hover:text-white"}`}
                     >
                       BASE
                     </button>
-                    <button 
+                    <button
                       onClick={() => setShowAiScore(true)}
                       className={`px-3 py-1 text-[10px] font-bold rounded-lg transition-all ${showAiScore ? "bg-secondary/20 text-secondary shadow-lg border border-secondary/20" : "text-text-secondary hover:text-white"}`}
                     >
@@ -204,28 +205,28 @@ export default function StockDetail({ analysis }: Props) {
                 </div>
 
                 {hasAiScore && (
-                   <div className="flex flex-col gap-1 border-l border-white/10 pl-6 py-2">
-                     <div className="flex items-center justify-between gap-4">
-                       <span className="text-[10px] font-bold text-text-secondary/50 uppercase">Base</span>
-                       <span className="text-sm font-bold text-text-primary">{analysis.quantScore.toFixed(0)}</span>
-                     </div>
-                     <div className="flex items-center justify-between gap-4">
-                       <span className="text-[10px] font-bold text-secondary/70 uppercase">AI Adj.</span>
-                       <span className="text-sm font-bold text-secondary">{analysis.claudeAnalysis!.aiAdjustedScore.toFixed(0)}</span>
-                     </div>
-                     <div className={`mt-1 text-[10px] font-black uppercase ${analysis.claudeAnalysis!.aiAdjustedScore >= analysis.quantScore ? "text-success" : "text-danger"}`}>
-                       {analysis.claudeAnalysis!.aiAdjustedScore >= analysis.quantScore ? "+" : ""}
-                       {(analysis.claudeAnalysis!.aiAdjustedScore - analysis.quantScore).toFixed(0)} pts
-                     </div>
-                   </div>
+                  <div className="flex flex-col gap-1 border-l border-white/10 pl-6 py-2">
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-[10px] font-bold text-text-secondary/50 uppercase">Base</span>
+                      <span className="text-sm font-bold text-text-primary">{analysis.quantScore.toFixed(0)}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-[10px] font-bold text-secondary/70 uppercase">AI Adj.</span>
+                      <span className="text-sm font-bold text-secondary">{analysis.claudeAnalysis!.aiAdjustedScore.toFixed(0)}</span>
+                    </div>
+                    <div className={`mt-1 text-[10px] font-black uppercase ${analysis.claudeAnalysis!.aiAdjustedScore >= analysis.quantScore ? "text-success" : "text-danger"}`}>
+                      {analysis.claudeAnalysis!.aiAdjustedScore >= analysis.quantScore ? "+" : ""}
+                      {(analysis.claudeAnalysis!.aiAdjustedScore - analysis.quantScore).toFixed(0)} pts
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
 
             <div className="relative z-10 mt-8">
               <div className="w-full bg-black/20 rounded-full h-3 p-0.5 border border-white/5 mb-3">
-                <div 
-                  className={`h-full bg-gradient-to-r ${config.gradient} rounded-full transition-all duration-1000 cubic-bezier(0.4, 0, 0.2, 1) shadow-[0_0_15px_rgba(6,182,212,0.3)]`} 
+                <div
+                  className={`h-full bg-gradient-to-r ${config.gradient} rounded-full transition-all duration-1000 cubic-bezier(0.4, 0, 0.2, 1) shadow-[0_0_15px_rgba(6,182,212,0.3)]`}
                   style={{ width: `${currentScore}%` }}
                 />
               </div>
@@ -255,18 +256,18 @@ export default function StockDetail({ analysis }: Props) {
 
         {/* Prediction / Quant Chart */}
         <div className="xl:col-span-4 flex flex-col gap-8">
-           {/* Prioritize Quant Path if available, else GBM */}
-           {analysis.quantPricePath ? (
-             <div className="glass-panel rounded-[2rem] p-8 flex-1 shadow-2xl">
-               <SectionHeader icon={Zap} label="Quant Projection" gradient sub="Composite Factor Analysis" />
-               <QuantPredictionChart path={analysis.quantPricePath} />
-             </div>
-           ) : analysis.pricePrediction ? (
-             <div className="glass-panel rounded-[2rem] p-8 flex-1 shadow-2xl">
-               <SectionHeader icon={TrendingUp} label="Scenario Forecast" sub="GBM Monte-Carlo" />
-               <PredictionChart prediction={analysis.pricePrediction} />
-             </div>
-           ) : null}
+          {/* Prioritize Quant Path if available, else GBM */}
+          {analysis.quantPricePath ? (
+            <div className="glass-panel rounded-[2rem] p-8 flex-1 shadow-2xl">
+              <SectionHeader icon={Zap} label="Quant Projection" gradient sub="Composite Factor Analysis" />
+              <QuantPredictionChart path={analysis.quantPricePath} />
+            </div>
+          ) : analysis.pricePrediction ? (
+            <div className="glass-panel rounded-[2rem] p-8 flex-1 shadow-2xl">
+              <SectionHeader icon={TrendingUp} label="Scenario Forecast" sub="GBM Monte-Carlo" />
+              <PredictionChart prediction={analysis.pricePrediction} />
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -274,9 +275,8 @@ export default function StockDetail({ analysis }: Props) {
       <div className="flex gap-2 border-b border-white/5 pb-1">
         <button
           onClick={() => setActiveTab("quant")}
-          className={`px-6 py-3 text-xs font-black uppercase tracking-widest transition-all relative ${
-            activeTab === "quant" ? "text-primary" : "text-text-secondary hover:text-white"
-          }`}
+          className={`px-6 py-3 text-xs font-black uppercase tracking-widest transition-all relative ${activeTab === "quant" ? "text-primary" : "text-text-secondary hover:text-white"
+            }`}
         >
           Quantitative Data
           {activeTab === "quant" && (
@@ -286,9 +286,8 @@ export default function StockDetail({ analysis }: Props) {
         {analysis.claudeAnalysis && (
           <button
             onClick={() => setActiveTab("ai")}
-            className={`px-6 py-3 text-xs font-black uppercase tracking-widest transition-all relative flex items-center gap-2 ${
-              activeTab === "ai" ? "text-secondary" : "text-text-secondary hover:text-white"
-            }`}
+            className={`px-6 py-3 text-xs font-black uppercase tracking-widest transition-all relative flex items-center gap-2 ${activeTab === "ai" ? "text-secondary" : "text-text-secondary hover:text-white"
+              }`}
           >
             <Brain size={14} /> AI Research
             {activeTab === "ai" && (
@@ -346,16 +345,16 @@ export default function StockDetail({ analysis }: Props) {
               <div className="glass-panel rounded-[2rem] p-8 shadow-xl">
                 <SectionHeader icon={Shield} label="Risk Analysis" sub="Volatility & Tail Risk" />
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                   {vol && <MetricCard label="Sharpe" value={fmt(vol.sharpeRatio)} sub="Risk-Adj. Return" highlight trend={vol.sharpeRatio > 1 ? "up" : undefined} />}
-                   {analysis.riskMetrics && (
-                     <>
-                       <MetricCard label="VaR (95%)" value={pct(analysis.riskMetrics.var95)} sub="Max Daily Loss" />
-                       <MetricCard label="CVaR (95%)" value={pct(analysis.riskMetrics.cvar95)} sub="Expected Tail Loss" />
-                       <MetricCard label="GARCH Vol" value={pct(analysis.riskMetrics.garchVol)} sub="Dynamic Vol" />
-                     </>
-                   )}
-                   {vol && <MetricCard label="Ann. Vol" value={pct(vol.annualizedVolatility)} sub="Yearly Sigma" />}
-                   {vol && <MetricCard label="Risk Level" value={vol.riskLevel} sub="Categorization" />}
+                  {vol && <MetricCard label="Sharpe" value={fmt(vol.sharpeRatio)} sub="Risk-Adj. Return" highlight trend={vol.sharpeRatio > 1 ? "up" : undefined} />}
+                  {analysis.riskMetrics && (
+                    <>
+                      <MetricCard label="VaR (95%)" value={pct(analysis.riskMetrics.var95)} sub="Max Daily Loss" />
+                      <MetricCard label="CVaR (95%)" value={pct(analysis.riskMetrics.cvar95)} sub="Expected Tail Loss" />
+                      <MetricCard label="GARCH Vol" value={pct(analysis.riskMetrics.garchVol)} sub="Dynamic Vol" />
+                    </>
+                  )}
+                  {vol && <MetricCard label="Ann. Vol" value={pct(vol.annualizedVolatility)} sub="Yearly Sigma" />}
+                  {vol && <MetricCard label="Risk Level" value={vol.riskLevel} sub="Categorization" />}
                 </div>
               </div>
 
@@ -365,15 +364,15 @@ export default function StockDetail({ analysis }: Props) {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   {mom && (
                     <>
-                       <MetricCard label="12M Mom" value={pct(mom.momentum12M - 1)} sub="Yearly Trend" highlight trend={mom.momentum12M > 1 ? "up" : "down"} />
-                       <MetricCard label="3M Mom" value={pct(mom.momentum3M - 1)} sub="Quarterly Trend" trend={mom.momentum3M > 1 ? "up" : "down"} />
-                       <MetricCard label="Signal" value={mom.signal} sub="Trend Status" />
+                      <MetricCard label="12M Mom" value={pct(mom.momentum12M - 1)} sub="Yearly Trend" highlight trend={mom.momentum12M > 1 ? "up" : "down"} />
+                      <MetricCard label="3M Mom" value={pct(mom.momentum3M - 1)} sub="Quarterly Trend" trend={mom.momentum3M > 1 ? "up" : "down"} />
+                      <MetricCard label="Signal" value={mom.signal} sub="Trend Status" />
                     </>
                   )}
                   {analysis.kelly && (
                     <>
-                       <MetricCard label="Kelly (Half)" value={`${(analysis.kelly.halfKelly * 100).toFixed(1)}%`} sub="Optimized Stake" highlight />
-                       <MetricCard label="Kelly (Full)" value={`${(analysis.kelly.fullKelly * 100).toFixed(1)}%`} sub="Max Theoretical" />
+                      <MetricCard label="Kelly (Half)" value={`${(analysis.kelly.halfKelly * 100).toFixed(1)}%`} sub="Optimized Stake" highlight />
+                      <MetricCard label="Kelly (Full)" value={`${(analysis.kelly.fullKelly * 100).toFixed(1)}%`} sub="Max Theoretical" />
                     </>
                   )}
                 </div>
@@ -384,9 +383,9 @@ export default function StockDetail({ analysis }: Props) {
       </div>
 
       <div className="flex justify-center pt-12 pb-8 opacity-30">
-         <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-text-secondary">
-           Analyzed {new Date(analysis.analyzedAt).toLocaleString()} · Institutional Grade Engine
-         </p>
+        <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-text-secondary">
+          Analyzed {new Date(analysis.analyzedAt).toLocaleString()} · Institutional Grade Engine
+        </p>
       </div>
     </div>
   );
