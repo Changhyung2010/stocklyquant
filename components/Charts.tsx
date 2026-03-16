@@ -38,10 +38,10 @@ export function PriceChart({ data }: PriceChartProps) {
   return (
     <ResponsiveContainer width="100%" height={260}>
       <LineChart data={display} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
         <XAxis
           dataKey="date"
-          tick={{ fill: "#6b7280", fontSize: 11 }}
+          tick={{ fill: "#64748b", fontSize: 11 }}
           tickFormatter={(v: string) => {
             const d = new Date(v);
             return `${d.toLocaleString("default", { month: "short" })} ${d.getFullYear().toString().slice(2)}`;
@@ -50,13 +50,13 @@ export function PriceChart({ data }: PriceChartProps) {
         />
         <YAxis
           domain={[min - pad, max + pad]}
-          tick={{ fill: "#6b7280", fontSize: 11 }}
+          tick={{ fill: "#64748b", fontSize: 11 }}
           tickFormatter={(v: number) => `$${v.toFixed(0)}`}
           width={56}
         />
         <Tooltip
-          contentStyle={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 6 }}
-          labelStyle={{ color: "#9ca3af" }}
+          contentStyle={{ background: "#0f172a", border: "1px solid #334155", borderRadius: 6 }}
+          labelStyle={{ color: "#94a3b8" }}
           itemStyle={{ color }}
           formatter={(v: number) => [`$${v.toFixed(2)}`, "Price"]}
           labelFormatter={(label: string) => new Date(label).toLocaleDateString()}
@@ -148,17 +148,17 @@ export function PredictionChart({ prediction }: PredictionChartProps) {
 
       <ResponsiveContainer width="100%" height={260}>
         <ComposedChart data={display} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
 
           <XAxis
             dataKey="date"
-            tick={{ fill: "#6b7280", fontSize: 10 }}
+            tick={{ fill: "#64748b", fontSize: 10 }}
             tickFormatter={fmtDate}
             interval="preserveStartEnd"
           />
           <YAxis
             domain={[yMin - pad, yMax + pad]}
-            tick={{ fill: "#6b7280", fontSize: 11 }}
+            tick={{ fill: "#64748b", fontSize: 11 }}
             tickFormatter={(v: number) => `$${v.toFixed(0)}`}
             width={56}
           />
@@ -166,11 +166,11 @@ export function PredictionChart({ prediction }: PredictionChartProps) {
           <Tooltip
             contentStyle={{
               background: "#111827",
-              border: "1px solid #374151",
+              border: "1px solid #334155",
               borderRadius: 8,
               fontSize: 12,
             }}
-            labelStyle={{ color: "#9ca3af" }}
+            labelStyle={{ color: "#94a3b8" }}
             labelFormatter={(label: string) => new Date(label).toLocaleDateString()}
             formatter={(value: number, name: string) => {
               const labels: Record<string, string> = {
@@ -191,7 +191,7 @@ export function PredictionChart({ prediction }: PredictionChartProps) {
               x={lastActualDate}
               stroke="#4b5563"
               strokeDasharray="4 4"
-              label={{ value: "Today", fill: "#6b7280", fontSize: 10, position: "insideTopRight" }}
+              label={{ value: "Today", fill: "#64748b", fontSize: 10, position: "insideTopRight" }}
             />
           )}
 
@@ -383,24 +383,24 @@ export function QuantPredictionChart({ path }: QuantPredictionChartProps) {
                 <stop offset="100%" stopColor="#818cf8" stopOpacity={0.8} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
             <XAxis
               dataKey="date"
-              tick={{ fill: "#6b7280", fontSize: 10 }}
+              tick={{ fill: "#64748b", fontSize: 10 }}
               tickFormatter={fmtDate}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
               domain={[yMin - pad, yMax + pad]}
-              tick={{ fill: "#6b7280", fontSize: 10 }}
+              tick={{ fill: "#64748b", fontSize: 10 }}
               tickFormatter={(v: number) => `$${v.toFixed(0)}`}
               axisLine={false}
               tickLine={false}
             />
             <Tooltip
               contentStyle={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: 12, boxShadow: "0 10px 15px -3px rgba(0,0,0,0.5)" }}
-              labelStyle={{ color: "#9ca3af", fontWeight: 600, marginBottom: 4 }}
+              labelStyle={{ color: "#94a3b8", fontWeight: 600, marginBottom: 4 }}
               labelFormatter={(label: string) => new Date(label).toLocaleDateString(undefined, { dateStyle: "long" })}
               formatter={(value: number, name: string) => [
                 <span key="val" className="font-bold text-gray-100">${value.toFixed(2)}</span>,

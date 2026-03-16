@@ -1,9 +1,17 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Search, Loader2, AlertCircle, X, ArrowRight, Zap } from "lucide-react";
+import { Search, Loader2, AlertCircle, X, ArrowRight, Zap, CheckCircle2 } from "lucide-react";
 import type { StockSearchResult, QuantAnalysis, ProgressEvent } from "@/lib/types";
 import { useApp } from "@/lib/context";
 import StockDetail from "./StockDetail";
+
+const STAGES = [
+  "Fetching Stock Data...",
+  "Claude Researching...",
+  "Selecting Best Formula...",
+  "Calculating...",
+  "Generating Report...",
+];
 
 interface SearchInputProps {
   large?: boolean;
@@ -35,55 +43,55 @@ function SearchInput({
   setError,
 }: SearchInputProps) {
   return (
-    <div ref={wrapperRef} className="relative w-full max-w-2xl mx-auto z-20">
-      <div className={`relative flex items-center transition-all duration-300 ${large ? "scale-100" : "scale-95"}`}>
+    <div ref={wrapperRef} className="relative w-full max-w-xl mx-auto">
+      <div className="relative flex items-center">
         <Search
-          className={`absolute left-4 text-text-secondary pointer-events-none transition-colors ${
-            large ? "w-6 h-6" : "w-5 h-5"
-          }`}
+          size={large ? 18 : 16}
+          className="absolute left-3.5 text-slate-500 pointer-events-none"
         />
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value.toUpperCase())}
           onKeyDown={(e) => e.key === "Enter" && analyze(query.trim())}
-          placeholder="Search ticker (e.g., AAPL, NVDA)..."
-          className={`w-full bg-surface-highlight/40 backdrop-blur-xl text-text-primary rounded-2xl border border-white/10 focus:border-primary/50 focus:bg-surface-highlight/60 focus:ring-4 focus:ring-primary/10 transition-all outline-none placeholder:text-text-secondary/50 ${
-            large ? "pl-14 pr-12 py-5 text-lg shadow-2xl shadow-black/50" : "pl-12 pr-10 py-3 text-sm shadow-lg"
-          }`}
+          placeholder="Search ticker (e.g. AAPL, NVDA)..."
+          className={`w-full bg-slate-900 text-slate-50 border border-slate-700 rounded-lg
+            focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500
+            placeholder:text-slate-500 transition-colors
+            ${large ? "pl-10 pr-10 py-3 text-base" : "pl-9 pr-8 py-2 text-sm"}`}
           disabled={!hasKeys || analyzing}
         />
         {query && (
           <button
             onClick={() => { setQuery(""); setSuggestions([]); setCurrentAnalysis(null); setError(""); }}
-            className="absolute right-4 text-text-secondary hover:text-white transition-colors"
+            className="absolute right-3 text-slate-500 hover:text-slate-300 transition-colors"
           >
-            <X size={18} />
+            <X size={15} />
           </button>
         )}
       </div>
 
       {/* Suggestions Dropdown */}
       {suggestions.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-surface/95 backdrop-blur-xl border border-border rounded-2xl overflow-hidden shadow-2xl z-50 animate-fade-in">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-slate-900 border border-slate-700 rounded-lg overflow-hidden shadow-2xl shadow-black/50 z-50">
           {loadingSuggestions ? (
-            <div className="p-4 flex justify-center">
-              <Loader2 size={20} className="animate-spin text-primary" />
+            <div className="p-3 flex justify-center">
+              <Loader2 size={16} className="animate-spin text-cyan-500" />
             </div>
           ) : (
             suggestions.slice(0, 6).map((s) => (
               <button
                 key={s.ticker}
                 onClick={() => analyze(s.ticker)}
-                className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-white/5 transition-colors text-left border-b border-border/50 last:border-0 group"
+                className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-800 transition-colors text-left border-b border-slate-800 last:border-0"
               >
                 <div className="flex items-center gap-3">
-                  <span className="w-12 font-bold text-white bg-surface-highlight/50 px-2 py-1 rounded-md text-center text-sm group-hover:bg-primary/20 group-hover:text-primary transition-colors">
+                  <span className="w-12 text-center font-bold text-xs text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded">
                     {s.ticker}
                   </span>
-                  <span className="text-text-secondary text-sm truncate max-w-[200px]">{s.name}</span>
+                  <span className="text-slate-300 text-sm truncate max-w-[200px]">{s.name}</span>
                 </div>
-                <span className="text-xs text-text-secondary/50 uppercase font-medium tracking-wider bg-surface-highlight/30 px-2 py-0.5 rounded">
+                <span className="text-xs text-slate-500 uppercase font-medium tracking-wider">
                   {s.exchange}
                 </span>
               </button>
@@ -94,14 +102,6 @@ function SearchInput({
     </div>
   );
 }
-
-const STAGES = [
-  "Fetching Stock Data...",
-  "Claude Researching...",
-  "Selecting Best Formula...",
-  "Calculating...",
-  "Generating Report...",
-];
 
 export default function StockSearch() {
   const { apiKeys, setCurrentAnalysis, currentAnalysis, setActiveTab, envKeysSet } = useApp();
@@ -114,7 +114,6 @@ export default function StockSearch() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Listen for watchlist → analyze events
   useEffect(() => {
     function handler(e: Event) {
       const { ticker } = (e as CustomEvent).detail as { ticker: string };
@@ -127,12 +126,8 @@ export default function StockSearch() {
 
   const hasKeys = envKeysSet || (apiKeys.polygon && apiKeys.fmp);
 
-  // Debounced search
   useEffect(() => {
-    if (!query.trim() || query.length < 1) {
-      setSuggestions([]);
-      return;
-    }
+    if (!query.trim() || query.length < 1) { setSuggestions([]); return; }
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
       if (!hasKeys) return;
@@ -142,23 +137,15 @@ export default function StockSearch() {
         const res = await fetch(`/api/search?q=${encodeURIComponent(query)}${keyParam}`);
         const data = await res.json();
         setSuggestions(data.results ?? []);
-      } catch {
-        // ignore
-      } finally {
-        setLoadingSuggestions(false);
-      }
+      } catch { /* ignore */ }
+      finally { setLoadingSuggestions(false); }
     }, 350);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [query, hasKeys, apiKeys.polygon, envKeysSet]);
 
-  // Close dropdown on outside click
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setSuggestions([]);
-      }
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setSuggestions([]);
     }
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -177,16 +164,10 @@ export default function StockSearch() {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          ticker,
-          polygonKey: apiKeys.polygon,
-          fmpKey: apiKeys.fmp,
-          claudeKey: apiKeys.claude || undefined,
-        }),
+        body: JSON.stringify({ ticker, polygonKey: apiKeys.polygon, fmpKey: apiKeys.fmp, claudeKey: apiKeys.claude || undefined }),
       });
 
       if (!res.ok || !res.body) {
-        // Non-streaming error
         const data = await res.json().catch(() => ({ error: "Analysis failed" }));
         setError(data.error ?? "Analysis failed");
         setAnalyzing(false);
@@ -200,7 +181,6 @@ export default function StockSearch() {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
         buffer += decoder.decode(value, { stream: true });
         const parts = buffer.split("\n\n");
         buffer = parts.pop() ?? "";
@@ -208,20 +188,15 @@ export default function StockSearch() {
         for (const chunk of parts) {
           const line = chunk.replace(/^data: /, "").trim();
           if (!line) continue;
-
           let event: ProgressEvent;
-          try {
-            event = JSON.parse(line);
-          } catch {
-            continue;
-          }
+          try { event = JSON.parse(line); } catch { continue; }
 
           switch (event.stage) {
-            case "fetching": setLoadingStage("Fetching Stock Data..."); break;
+            case "fetching":    setLoadingStage("Fetching Stock Data..."); break;
             case "researching": setLoadingStage("Claude Researching..."); break;
-            case "selecting": setLoadingStage("Selecting Best Formula..."); break;
+            case "selecting":   setLoadingStage("Selecting Best Formula..."); break;
             case "calculating": setLoadingStage("Calculating..."); break;
-            case "reporting": setLoadingStage("Generating Report..."); break;
+            case "reporting":   setLoadingStage("Generating Report..."); break;
             case "complete":
               if (event.result) setCurrentAnalysis(event.result as QuantAnalysis);
               setAnalyzing(false);
@@ -239,69 +214,56 @@ export default function StockSearch() {
     }
   }
 
-  // ─── Shared props for SearchInput ──────────────────────────────────────────
   const searchInputProps = {
-    wrapperRef,
-    query,
-    setQuery,
-    suggestions,
-    setSuggestions,
-    loadingSuggestions,
-    hasKeys,
-    analyzing,
-    analyze,
-    setCurrentAnalysis,
-    setError,
+    wrapperRef, query, setQuery, suggestions, setSuggestions,
+    loadingSuggestions, hasKeys, analyzing, analyze, setCurrentAnalysis, setError,
   };
 
-  // ─── Render: Hero / Loading / Content ──────────────────────────────────────
-  
-  // 1. Hero State (No analysis, no loading)
+  /* ── Hero State ─────────────────────────────────────────────────────────── */
   if (!analyzing && !currentAnalysis) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-6 relative">
-        {/* Background Decorative Elements */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none" />
-
-        <div className="max-w-3xl w-full text-center space-y-8 relative z-10 -mt-20">
-          <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium uppercase tracking-wider mb-2">
-              <Zap size={12} fill="currentColor" /> v2.0 Quant Engine Live
+      <div className="h-full flex flex-col items-center justify-center p-6">
+        <div className="w-full max-w-lg text-center space-y-8">
+          {/* Logo mark */}
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan-500/30 bg-cyan-500/5 text-cyan-400 text-xs font-semibold uppercase tracking-widest">
+              <Zap size={11} fill="currentColor" /> Quant Engine v2.0
             </div>
-            <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-white drop-shadow-sm">
-              Quant <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Alpha</span> Search
+            <h1 className="text-4xl font-bold text-slate-50 tracking-tight">
+              Quant <span className="text-cyan-400">Alpha</span> Search
             </h1>
-            <p className="text-lg text-text-secondary max-w-xl mx-auto leading-relaxed">
-              Institutional-grade analysis powered by Fama-French 5-factor models, GBM simulations, and AI-driven macro risk assessment.
+            <p className="text-slate-400 text-sm leading-relaxed">
+              Institutional-grade analysis powered by Fama-French 5-factor models,
+              GBM simulations, and AI-driven macro risk assessment.
             </p>
           </div>
 
-          <div className="w-full max-w-xl mx-auto">
-            <SearchInput large {...searchInputProps} />
-          </div>
+          <SearchInput large {...searchInputProps} />
 
           {!hasKeys && (
-            <div className="max-w-md mx-auto flex items-start gap-3 bg-warning/10 border border-warning/20 rounded-xl p-4 text-left">
-              <AlertCircle size={18} className="text-warning shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-warning">API Configuration Required</p>
-                <p className="text-xs text-warning/80">
-                  To access real-time market data, please configure your Polygon and FMP keys in{" "}
-                  <button onClick={() => setActiveTab("settings")} className="underline hover:text-white">Settings</button>.
+            <div className="flex items-start gap-3 bg-amber-500/5 border border-amber-500/20 rounded-lg p-4 text-left">
+              <AlertCircle size={16} className="text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-amber-400">API Keys Required</p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Configure your Polygon and FMP keys in{" "}
+                  <button onClick={() => setActiveTab("settings")} className="text-cyan-400 underline">Settings</button>.
                 </p>
               </div>
             </div>
           )}
 
-          <div className="pt-8">
-            <p className="text-xs font-medium text-text-secondary uppercase tracking-widest mb-4">Trending Tickers</p>
+          {/* Trending tickers */}
+          <div>
+            <p className="text-xs text-slate-500 uppercase tracking-widest mb-3">Trending</p>
             <div className="flex flex-wrap justify-center gap-2">
               {["NVDA", "TSLA", "AAPL", "AMD", "PLTR", "MSFT"].map((t) => (
                 <button
                   key={t}
                   onClick={() => analyze(t)}
                   disabled={!hasKeys}
-                  className="group px-4 py-2 bg-surface/50 hover:bg-primary/10 border border-border hover:border-primary/30 rounded-lg text-sm font-medium text-text-secondary hover:text-primary transition-all duration-200"
+                  className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-slate-600
+                    rounded-md text-sm font-medium text-slate-300 hover:text-slate-50 transition-colors disabled:opacity-40"
                 >
                   {t}
                 </button>
@@ -313,74 +275,83 @@ export default function StockSearch() {
     );
   }
 
-  // 2. Loading State
+  /* ── Loading State ──────────────────────────────────────────────────────── */
   if (analyzing) {
+    const stageIdx = Math.max(STAGES.indexOf(loadingStage), 0);
     return (
-      <div className="h-full flex flex-col items-center justify-center p-6 bg-surface/30 backdrop-blur-sm animate-fade-in">
-        <div className="max-w-md w-full text-center space-y-8">
-          <div className="relative w-20 h-20 mx-auto">
-            <div className="absolute inset-0 border-4 border-surface-highlight rounded-full" />
-            <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Zap size={24} className="text-primary animate-pulse" fill="currentColor" />
+      <div className="h-full flex flex-col items-center justify-center p-6">
+        <div className="w-full max-w-sm space-y-6">
+          {/* Spinner */}
+          <div className="flex justify-center">
+            <div className="relative w-14 h-14">
+              <div className="absolute inset-0 rounded-full border-2 border-slate-800" />
+              <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-cyan-500 animate-spin" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Zap size={20} className="text-cyan-500" fill="currentColor" />
+              </div>
             </div>
           </div>
-          
-          <div className="space-y-2">
-            <h3 className="text-2xl font-bold text-white">{loadingStage}</h3>
-            <p className="text-text-secondary text-sm">
-              Processing thousands of data points...
-            </p>
+
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-slate-50">{loadingStage}</h3>
+            <p className="text-slate-500 text-sm mt-1">Processing market data…</p>
           </div>
 
-          <div className="w-full bg-surface-highlight rounded-full h-1.5 overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-500 ease-out"
-              style={{ width: `${(Math.max(STAGES.indexOf(loadingStage), 0) / (STAGES.length - 1)) * 100}%` }}
+          {/* Progress bar */}
+          <div className="w-full bg-slate-800 rounded-full h-1">
+            <div
+              className="h-1 bg-cyan-500 rounded-full transition-all duration-500"
+              style={{ width: `${(stageIdx / (STAGES.length - 1)) * 100}%` }}
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-2 text-left bg-surface/50 p-4 rounded-xl border border-border/50">
-             {STAGES.map((stage, idx) => {
-               const isActive = stage === loadingStage;
-               const isDone = STAGES.indexOf(loadingStage) > idx;
-               return (
-                 <div key={stage} className={`flex items-center gap-3 text-sm transition-colors ${isActive ? "text-primary font-medium" : isDone ? "text-success/80" : "text-text-secondary/40"}`}>
-                   <div className={`w-2 h-2 rounded-full ${isActive ? "bg-primary animate-pulse" : isDone ? "bg-success" : "bg-border"}`} />
-                   {stage}
-                   {isDone && <ArrowRight size={12} className="ml-auto" />}
-                 </div>
-               );
-             })}
+          {/* Stage list */}
+          <div className="space-y-2 bg-slate-900 border border-slate-800 rounded-lg p-4">
+            {STAGES.map((stage, idx) => {
+              const isActive = stage === loadingStage;
+              const isDone = stageIdx > idx;
+              return (
+                <div key={stage} className={`flex items-center gap-2.5 text-sm ${
+                  isActive ? "text-cyan-400 font-medium"
+                  : isDone  ? "text-emerald-400"
+                  : "text-slate-600"
+                }`}>
+                  {isDone
+                    ? <CheckCircle2 size={14} />
+                    : <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                        isActive ? "border-cyan-500" : "border-slate-700"
+                      }`}>
+                        {isActive && <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />}
+                      </div>
+                  }
+                  {stage}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
     );
   }
 
-  // 3. Results State
+  /* ── Results State ──────────────────────────────────────────────────────── */
   return (
-    <div className="flex flex-col h-full bg-background/50">
-      {/* Persistent Header */}
-      <div className="sticky top-0 z-30 bg-background/40 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex items-center gap-6 shadow-xl">
-        <div className="flex-1 max-w-xl">
+    <div className="flex flex-col h-full">
+      {/* Sticky header with search */}
+      <div className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-6 py-3 flex items-center gap-4">
+        <div className="flex-1 max-w-md">
           <SearchInput {...searchInputProps} />
         </div>
         {error && (
-          <div className="flex items-center gap-2 text-danger text-xs font-bold bg-danger/10 px-4 py-2 rounded-xl border border-danger/20 animate-fade-in">
-            <AlertCircle size={14} />
-            <span>{error}</span>
+          <div className="flex items-center gap-2 text-rose-400 text-xs font-medium bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-md">
+            <AlertCircle size={13} /> {error}
           </div>
         )}
       </div>
 
-      {/* Scrollable Content Container */}
-      <div className="flex-1 overflow-y-auto scroll-smooth custom-scrollbar">
-        {currentAnalysis && (
-          <div className="pb-12">
-            <StockDetail analysis={currentAnalysis} />
-          </div>
-        )}
+      {/* Scrollable results */}
+      <div className="flex-1 overflow-y-auto">
+        {currentAnalysis && <StockDetail analysis={currentAnalysis} />}
       </div>
     </div>
   );

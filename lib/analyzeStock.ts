@@ -414,6 +414,8 @@ export async function analyzeStock(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
   const latestPrice = sortedBars[sortedBars.length - 1]?.price ?? 0;
+  // Ensure profile reflects the actual latest price from Polygon bars
+  if (profile && latestPrice > 0) profile.price = latestPrice;
   const price3MAgo = sortedBars[Math.max(0, sortedBars.length - 63)]?.price ?? latestPrice;
   const price12MAgo = sortedBars[Math.max(0, sortedBars.length - 252)]?.price ?? latestPrice;
   const return3M = price3MAgo > 0 ? latestPrice / price3MAgo - 1 : 0;

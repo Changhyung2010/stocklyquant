@@ -2,7 +2,7 @@
 import { useState } from "react";
 import {
   BookmarkPlus, BookmarkCheck, TrendingUp, Activity, DollarSign,
-  BarChart2, AlertCircle, Shield, Calculator, Zap, ArrowUpRight, ArrowDownRight, Brain
+  BarChart2, AlertCircle, Shield, Zap, ArrowUpRight, ArrowDownRight, Brain,
 } from "lucide-react";
 import type { QuantAnalysis } from "@/lib/types";
 import { PriceChart, PredictionChart, QuantPredictionChart } from "./Charts";
@@ -10,53 +10,50 @@ import AIAnalysis from "./AIAnalysis";
 import { useApp } from "@/lib/context";
 import { marketCapFormatted } from "@/lib/quantCalculator";
 
-interface Props {
-  analysis: QuantAnalysis;
-}
+interface Props { analysis: QuantAnalysis; }
 
-const SCORE_CONFIG: Record<string, { gradient: string; text: string; icon: any }> = {
-  "Strong Buy": { gradient: "from-emerald-500 to-green-400", text: "text-emerald-400", icon: TrendingUp },
-  Buy: { gradient: "from-green-500 to-teal-400", text: "text-green-400", icon: ArrowUpRight },
-  Neutral: { gradient: "from-yellow-500 to-amber-400", text: "text-yellow-400", icon: Activity },
-  Sell: { gradient: "from-orange-500 to-amber-500", text: "text-orange-400", icon: ArrowDownRight },
-  "Strong Sell": { gradient: "from-red-500 to-rose-500", text: "text-red-400", icon: AlertCircle },
+const SCORE_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
+  "Strong Buy":  { color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20", label: "Strong Buy"  },
+  "Buy":         { color: "text-green-400",   bg: "bg-green-500/10 border-green-500/20",     label: "Buy"         },
+  "Neutral":     { color: "text-amber-400",   bg: "bg-amber-500/10 border-amber-500/20",     label: "Neutral"     },
+  "Sell":        { color: "text-orange-400",  bg: "bg-orange-500/10 border-orange-500/20",   label: "Sell"        },
+  "Strong Sell": { color: "text-rose-400",    bg: "bg-rose-500/10 border-rose-500/20",       label: "Strong Sell" },
 };
 
-function MetricCard({ label, value, sub, highlight = false, trend }: { label: string; value: string; sub?: string; highlight?: boolean, trend?: "up" | "down" }) {
+function MetricCard({ label, value, sub, highlight = false, trend }: {
+  label: string; value: string; sub?: string; highlight?: boolean; trend?: "up" | "down";
+}) {
   return (
-    <div className={`group relative p-4 rounded-2xl border transition-all duration-300 hover:translate-y-[-2px] ${highlight
-        ? "bg-primary/5 border-primary/20 shadow-lg shadow-primary/5"
-        : "bg-surface-highlight/40 border-white/5 hover:bg-surface-highlight/60 hover:border-white/10"
-      }`}>
-      <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-2 opacity-80 group-hover:opacity-100 transition-opacity">{label}</p>
-      <div className="flex items-baseline gap-2">
-        <p className={`text-xl font-bold tracking-tight tabular-nums ${highlight ? "text-primary" : "text-text-primary"}`}>
+    <div className={`p-4 rounded-lg border ${
+      highlight ? "bg-cyan-500/5 border-cyan-500/20" : "bg-slate-900 border-slate-800"
+    }`}>
+      <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-2">{label}</p>
+      <div className="flex items-baseline gap-1.5">
+        <p className={`text-lg font-bold tabular-nums ${highlight ? "text-cyan-400" : "text-slate-100"}`}>
           {value}
         </p>
         {trend && (
-          <span className={`text-[10px] font-black ${trend === "up" ? "text-success" : "text-danger"}`}>
+          <span className={`text-xs font-bold ${trend === "up" ? "text-emerald-400" : "text-rose-400"}`}>
             {trend === "up" ? "↑" : "↓"}
           </span>
         )}
       </div>
-      {sub && <p className="text-[10px] font-medium text-text-secondary/60 mt-1 leading-tight group-hover:text-text-secondary/80 transition-colors">{sub}</p>}
+      {sub && <p className="text-[10px] text-slate-500 mt-1 leading-tight">{sub}</p>}
     </div>
   );
 }
 
-function SectionHeader({ icon: Icon, label, gradient = false, sub }: { icon: React.ElementType; label: string; gradient?: boolean; sub?: string }) {
+function SectionTitle({ icon: Icon, label, sub }: {
+  icon: React.ElementType; label: string; sub?: string;
+}) {
   return (
-    <div className="flex items-center justify-between mb-5">
-      <div className="flex items-center gap-3">
-        <div className={`p-2 rounded-xl border ${gradient ? "bg-primary/10 border-primary/20" : "bg-surface-highlight/50 border-white/5"}`}>
-          <Icon size={18} className={gradient ? "text-primary" : "text-text-secondary"} />
-        </div>
-        <div>
-          <h3 className={`text-xs font-black uppercase tracking-widest ${gradient ? "bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary" : "text-text-secondary"}`}>
-            {label}
-          </h3>
-          {sub && <p className="text-[9px] text-text-secondary/60 font-bold uppercase tracking-tight mt-0.5">{sub}</p>}
-        </div>
+    <div className="flex items-center gap-2.5 mb-4">
+      <div className="p-1.5 rounded-md bg-slate-800 border border-slate-700">
+        <Icon size={15} className="text-slate-400" />
+      </div>
+      <div>
+        <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">{label}</h3>
+        {sub && <p className="text-[10px] text-slate-500 mt-0.5">{sub}</p>}
       </div>
     </div>
   );
@@ -66,7 +63,6 @@ function fmt(v: number | undefined, decimals = 2, suffix = "") {
   if (v === undefined || v === null || isNaN(v)) return "N/A";
   return `${v.toFixed(decimals)}${suffix}`;
 }
-
 function pct(v: number | undefined, decimals = 1) {
   if (v === undefined || v === null || isNaN(v)) return "N/A";
   return `${(v * 100).toFixed(decimals)}%`;
@@ -80,311 +76,251 @@ export default function StockDetail({ analysis }: Props) {
   if (!analysis) return null;
 
   const inWatchlist = watchlist?.some((w) => w.ticker === analysis.ticker);
-
-  // Choose which score to display primarily
   const hasAiScore = !!analysis.claudeAnalysis?.aiAdjustedScore;
   const currentScore = (hasAiScore && showAiScore) ? analysis.claudeAnalysis!.aiAdjustedScore : analysis.quantScore;
-  const currentLabel = (hasAiScore && showAiScore) ? analysis.quantScoreLabel : analysis.quantScoreLabel; // Labels are same for now
 
   const config = SCORE_CONFIG[analysis.quantScoreLabel] ?? SCORE_CONFIG["Neutral"];
   const { famaFrench: ff, momentum: mom, volatility: vol, valueMetrics: val, profile } = analysis;
   const change = profile?.changes ?? 0;
   const changePositive = change >= 0;
 
-  function toggleWatchlist() {
-    if (inWatchlist) {
-      removeFromWatchlist(analysis.ticker);
-    } else {
-      addToWatchlist(analysis.ticker, analysis.quantScore, profile?.price);
-    }
-  }
-
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 space-y-8 animate-slide-up">
-      {/* ─── Top Header Grid ──────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Ticker Info */}
-        <div className="lg:col-span-7 flex flex-col">
-          <div className="flex items-center gap-4 mb-3">
-            <h1 className="text-5xl md:text-6xl font-black text-white tracking-tighter">{analysis.ticker}</h1>
-            <div className="flex flex-col gap-1">
-              {profile?.exchange && (
-                <span className="px-2 py-0.5 rounded bg-surface-highlight border border-white/5 text-[10px] font-bold text-text-secondary uppercase tracking-widest">
-                  {profile.exchange}
-                </span>
-              )}
+    <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
+
+      {/* ── Header ──────────────────────────────────────────────────────────── */}
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Left: Ticker + Price */}
+        <div className="flex-1">
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <h1 className="text-4xl font-black text-slate-50 tracking-tight">{analysis.ticker}</h1>
+                {profile?.exchange && (
+                  <span className="px-2 py-0.5 text-[10px] font-bold text-slate-400 bg-slate-800 border border-slate-700 rounded uppercase tracking-wider">
+                    {profile.exchange}
+                  </span>
+                )}
+              </div>
+              <p className="text-slate-400 font-medium">{profile?.companyName ?? "Unknown Company"}</p>
               {profile?.sector && (
-                <span className="text-[10px] text-primary/80 font-bold uppercase tracking-widest">
-                  {profile.sector}
-                </span>
+                <p className="text-xs text-cyan-400 font-medium mt-1">{profile.sector}</p>
               )}
             </div>
             <button
-              onClick={toggleWatchlist}
-              className={`ml-auto p-3 rounded-2xl transition-all ${inWatchlist
-                  ? "bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5"
-                  : "bg-surface-highlight/50 text-text-secondary border border-white/5 hover:text-white hover:bg-surface-highlight"
-                }`}
+              onClick={() => inWatchlist ? removeFromWatchlist(analysis.ticker) : addToWatchlist(analysis.ticker, analysis.quantScore, profile?.price)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                inWatchlist
+                  ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-400"
+                  : "bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-50 hover:border-slate-600"
+              }`}
             >
-              {inWatchlist ? <BookmarkCheck size={22} /> : <BookmarkPlus size={22} />}
+              {inWatchlist ? <BookmarkCheck size={16} /> : <BookmarkPlus size={16} />}
+              <span className="hidden sm:inline">{inWatchlist ? "Saved" : "Save"}</span>
             </button>
           </div>
 
-          <h2 className="text-xl md:text-2xl text-text-secondary font-semibold tracking-tight mb-8">
-            {profile?.companyName ?? "Unknown Company"}
-          </h2>
-
-          <div className="flex items-center gap-6">
-            <div className="space-y-1">
-              <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest opacity-70">Current Price</p>
-              <div className="flex items-baseline gap-3">
-                <span className="text-5xl font-bold text-text-primary tracking-tighter tabular-nums">
-                  ${profile?.price?.toFixed(2) ?? "0.00"}
+          {/* Price Row */}
+          <div className="flex items-end gap-6">
+            <div>
+              <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1">Current Price</p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-bold text-slate-50 tabular-nums">
+                  ${profile?.price?.toFixed(2) ?? "—"}
                 </span>
-                <span className={`text-xl font-bold flex items-center gap-1 ${changePositive ? "text-success" : "text-danger"}`}>
-                  {changePositive ? <ArrowUpRight size={20} strokeWidth={3} /> : <ArrowDownRight size={20} strokeWidth={3} />}
+                <span className={`flex items-center gap-0.5 text-base font-bold ${changePositive ? "text-emerald-400" : "text-rose-400"}`}>
+                  {changePositive ? <ArrowUpRight size={18} strokeWidth={2.5} /> : <ArrowDownRight size={18} strokeWidth={2.5} />}
                   {(() => {
-                    const prevPrice = (profile?.price ?? 0) - change;
-                    return prevPrice !== 0 ? Math.abs((change / prevPrice) * 100).toFixed(2) : "0.00";
+                    const prev = (profile?.price ?? 0) - change;
+                    return prev !== 0 ? Math.abs((change / prev) * 100).toFixed(2) : "0.00";
                   })()}%
                 </span>
               </div>
             </div>
 
-            <div className="h-12 w-px bg-white/5 mx-2 hidden sm:block" />
-
-            <div className="space-y-1 hidden sm:block">
-              <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest opacity-70">Market Cap</p>
-              <p className="text-2xl font-bold text-text-primary tracking-tight">
-                {marketCapFormatted(profile?.mktCap)}
-              </p>
-            </div>
+            {profile?.mktCap && (
+              <div className="pb-1">
+                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1">Market Cap</p>
+                <p className="text-xl font-bold text-slate-200">{marketCapFormatted(profile.mktCap)}</p>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Quant Score Card - Refined Side-by-Side Comparison */}
-        <div className="lg:col-span-5 relative group">
-          <div className={`absolute inset-0 bg-gradient-to-br ${config.gradient} opacity-10 blur-2xl rounded-[2rem] group-hover:opacity-20 transition-opacity duration-500`} />
-          <div className="relative h-full bg-surface/40 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-8 flex flex-col justify-between overflow-hidden shadow-2xl">
-            {/* Background Icon */}
-            <div className="absolute -top-4 -right-4 p-8 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity duration-500">
-              <config.icon size={200} />
+        {/* Right: Score Card */}
+        <div className={`lg:w-64 rounded-xl border p-5 ${config.bg}`}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-1.5">
+              <Zap size={14} className="text-slate-400" />
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Quant Score</span>
             </div>
-
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-2">
-                  <Zap size={16} className="text-primary" fill="currentColor" />
-                  <span className="text-xs font-black text-text-secondary uppercase tracking-[0.2em]">Quant Confidence</span>
-                </div>
-
-                {hasAiScore && (
-                  <div className="flex bg-black/40 p-1 rounded-xl border border-white/5">
-                    <button
-                      onClick={() => setShowAiScore(false)}
-                      className={`px-3 py-1 text-[10px] font-bold rounded-lg transition-all ${!showAiScore ? "bg-surface-highlight text-white shadow-lg" : "text-text-secondary hover:text-white"}`}
-                    >
-                      BASE
-                    </button>
-                    <button
-                      onClick={() => setShowAiScore(true)}
-                      className={`px-3 py-1 text-[10px] font-bold rounded-lg transition-all ${showAiScore ? "bg-secondary/20 text-secondary shadow-lg border border-secondary/20" : "text-text-secondary hover:text-white"}`}
-                    >
-                      AI
-                    </button>
-                  </div>
-                )}
+            {hasAiScore && (
+              <div className="flex bg-slate-900/80 rounded-md border border-slate-700 p-0.5">
+                <button
+                  onClick={() => setShowAiScore(false)}
+                  className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${!showAiScore ? "bg-slate-700 text-slate-50" : "text-slate-500 hover:text-slate-300"}`}
+                >BASE</button>
+                <button
+                  onClick={() => setShowAiScore(true)}
+                  className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${showAiScore ? "bg-violet-500/20 text-violet-400" : "text-slate-500 hover:text-slate-300"}`}
+                >AI</button>
               </div>
+            )}
+          </div>
 
-              <div className="flex items-center gap-6">
-                <div className="flex items-end gap-1">
-                  <span className={`text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br ${config.gradient}`}>
-                    {currentScore.toFixed(0)}
-                  </span>
-                  <span className="text-xl font-bold text-text-secondary/60 mb-4">/100</span>
-                </div>
+          <div className="flex items-end gap-1 mb-3">
+            <span className={`text-6xl font-black tabular-nums ${config.color}`}>
+              {currentScore.toFixed(0)}
+            </span>
+            <span className="text-slate-500 text-lg mb-2">/100</span>
+          </div>
 
-                {hasAiScore && (
-                  <div className="flex flex-col gap-1 border-l border-white/10 pl-6 py-2">
-                    <div className="flex items-center justify-between gap-4">
-                      <span className="text-[10px] font-bold text-text-secondary/70 uppercase">Base</span>
-                      <span className="text-sm font-bold text-text-primary">{analysis.quantScore.toFixed(0)}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-4">
-                      <span className="text-[10px] font-bold text-secondary/70 uppercase">AI Adj.</span>
-                      <span className="text-sm font-bold text-secondary">{analysis.claudeAnalysis!.aiAdjustedScore.toFixed(0)}</span>
-                    </div>
-                    <div className={`mt-1 text-[10px] font-black uppercase ${analysis.claudeAnalysis!.aiAdjustedScore >= analysis.quantScore ? "text-success" : "text-danger"}`}>
-                      {analysis.claudeAnalysis!.aiAdjustedScore >= analysis.quantScore ? "+" : ""}
-                      {(analysis.claudeAnalysis!.aiAdjustedScore - analysis.quantScore).toFixed(0)} pts
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+          <div className="w-full bg-slate-800/50 rounded-full h-2 mb-3">
+            <div
+              className={`h-2 rounded-full transition-all duration-700 ${
+                analysis.quantScoreLabel === "Strong Buy"  ? "bg-emerald-500" :
+                analysis.quantScoreLabel === "Buy"         ? "bg-green-500"   :
+                analysis.quantScoreLabel === "Neutral"     ? "bg-amber-500"   :
+                analysis.quantScoreLabel === "Sell"        ? "bg-orange-500"  : "bg-rose-500"
+              }`}
+              style={{ width: `${currentScore}%` }}
+            />
+          </div>
 
-            <div className="relative z-10 mt-8">
-              <div className="w-full bg-black/20 rounded-full h-3 p-0.5 border border-white/5 mb-3">
-                <div
-                  className={`h-full bg-gradient-to-r ${config.gradient} rounded-full transition-all duration-1000 cubic-bezier(0.4, 0, 0.2, 1) shadow-[0_0_15px_rgba(6,182,212,0.3)]`}
-                  style={{ width: `${currentScore}%` }}
-                />
-              </div>
-              <div className="flex justify-between items-center">
-                <p className={`font-black ${config.text} uppercase tracking-[0.3em] text-sm`}>
-                  {analysis.quantScoreLabel}
-                </p>
-                <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md border border-white/5">
-                  <Activity size={12} className="text-text-secondary" />
-                  <span className="text-[10px] font-bold text-text-secondary/60 uppercase tracking-tighter">Engine v2.1</span>
-                </div>
-              </div>
-            </div>
+          <div className="flex items-center justify-between">
+            <span className={`text-sm font-bold uppercase tracking-wider ${config.color}`}>
+              {analysis.quantScoreLabel}
+            </span>
+            {hasAiScore && (
+              <span className={`text-xs font-bold ${
+                analysis.claudeAnalysis!.aiAdjustedScore >= analysis.quantScore ? "text-emerald-400" : "text-rose-400"
+              }`}>
+                {analysis.claudeAnalysis!.aiAdjustedScore >= analysis.quantScore ? "+" : ""}
+                {(analysis.claudeAnalysis!.aiAdjustedScore - analysis.quantScore).toFixed(0)} AI adj
+              </span>
+            )}
           </div>
         </div>
       </div>
 
-      {/* ─── Main Charts Grid ─────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        {/* Main Price Chart */}
-        <div className="glass-panel rounded-[2rem] p-8 shadow-2xl">
-          <SectionHeader icon={BarChart2} label="Price Action (1Y)" sub="Historical Trend" />
-          <div className="w-full mt-4">
-            <PriceChart data={analysis.priceHistory} />
-          </div>
+      {/* ── Charts ──────────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+          <SectionTitle icon={BarChart2} label="Price Action" sub="12-Month History" />
+          <PriceChart data={analysis.priceHistory} />
         </div>
-
-        {/* Prediction / Quant Chart */}
-        <div className="flex flex-col gap-8">
-          {/* Prioritize Quant Path if available, else GBM */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
           {analysis.quantPricePath ? (
-            <div className="glass-panel rounded-[2rem] p-8 flex-1 shadow-2xl">
-              <SectionHeader icon={Zap} label="Quant Projection" gradient sub="Composite Factor Analysis" />
+            <>
+              <SectionTitle icon={Zap} label="Quant Projection" sub="Composite Factor Analysis" />
               <QuantPredictionChart path={analysis.quantPricePath} />
-            </div>
+            </>
           ) : analysis.pricePrediction ? (
-            <div className="glass-panel rounded-[2rem] p-8 flex-1 shadow-2xl">
-              <SectionHeader icon={TrendingUp} label="Scenario Forecast" sub="GBM Monte-Carlo" />
+            <>
+              <SectionTitle icon={TrendingUp} label="Scenario Forecast" sub="GBM Monte-Carlo" />
               <PredictionChart prediction={analysis.pricePrediction} />
-            </div>
-          ) : null}
+            </>
+          ) : (
+            <div className="h-40 flex items-center justify-center text-slate-600 text-sm">No forecast available</div>
+          )}
         </div>
       </div>
 
-      {/* ─── Tabs & Details ───────────────────────────────────────────────── */}
-      <div className="flex gap-2 border-b border-white/5 pb-1">
+      {/* ── Tabs ────────────────────────────────────────────────────────────── */}
+      <div className="flex gap-1 border-b border-slate-800">
         <button
           onClick={() => setActiveTab("quant")}
-          className={`px-6 py-3 text-xs font-black uppercase tracking-widest transition-all relative ${activeTab === "quant" ? "text-primary" : "text-text-secondary hover:text-white"
-            }`}
+          className={`px-4 py-2.5 text-xs font-bold uppercase tracking-widest transition-colors relative ${
+            activeTab === "quant" ? "text-cyan-400" : "text-slate-500 hover:text-slate-300"
+          }`}
         >
           Quantitative Data
-          {activeTab === "quant" && (
-            <div className="absolute bottom-[-1px] left-0 w-full h-0.5 bg-primary shadow-[0_0_15px_rgba(6,182,212,0.8)]" />
-          )}
+          {activeTab === "quant" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-500" />}
         </button>
         {analysis.claudeAnalysis && (
           <button
             onClick={() => setActiveTab("ai")}
-            className={`px-6 py-3 text-xs font-black uppercase tracking-widest transition-all relative flex items-center gap-2 ${activeTab === "ai" ? "text-secondary" : "text-text-secondary hover:text-white"
-              }`}
+            className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold uppercase tracking-widest transition-colors relative ${
+              activeTab === "ai" ? "text-violet-400" : "text-slate-500 hover:text-slate-300"
+            }`}
           >
-            <Brain size={14} /> AI Research
-            {activeTab === "ai" && (
-              <div className="absolute bottom-[-1px] left-0 w-full h-0.5 bg-secondary shadow-[0_0_15px_rgba(139,92,246,0.8)]" />
-            )}
+            <Brain size={13} /> AI Research
+            {activeTab === "ai" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-violet-500" />}
           </button>
         )}
       </div>
 
-      <div className="mt-8">
-        {activeTab === "ai" && analysis.claudeAnalysis && (
-          <div className="animate-fade-in">
-            <AIAnalysis analysis={analysis.claudeAnalysis} />
-          </div>
-        )}
+      {/* ── Tab Content ─────────────────────────────────────────────────────── */}
+      {activeTab === "ai" && analysis.claudeAnalysis && (
+        <AIAnalysis analysis={analysis.claudeAnalysis} />
+      )}
 
-        {activeTab === "quant" && (
-          <div className="space-y-8 animate-fade-in">
-            {/* Fama-French & Value Grid */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-              {/* Factor Exposure */}
-              {ff && (
-                <div className="glass-panel rounded-[2rem] p-8 shadow-xl">
-                  <SectionHeader icon={BarChart2} label="Factor Exposure" sub="Fama-French 5-Factor Model" />
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <MetricCard label="Market β" value={fmt(ff.betas.marketBeta, 2)} sub="Systematic Risk" highlight trend={ff.betas.marketBeta > 1.2 ? "up" : ff.betas.marketBeta < 0.8 ? "down" : undefined} />
-                    <MetricCard label="Size (SMB)" value={fmt(ff.betas.smbBeta, 2)} sub="Small Cap Tilt" />
-                    <MetricCard label="Value (HML)" value={fmt(ff.betas.hmlBeta, 2)} sub="Value Premium" />
-                    <MetricCard label="Profit (RMW)" value={fmt(ff.rmwBeta, 2)} sub="Quality Factor" />
-                    <MetricCard label="Inv (CMA)" value={fmt(ff.cmaBeta, 2)} sub="Investment Factor" />
-                    <MetricCard label="Alpha (α)" value={`${(ff.betas.alpha * 100).toFixed(2)}%`} sub="Excess Return" highlight trend={ff.betas.alpha > 0 ? "up" : "down"} />
-                  </div>
-                </div>
-              )}
-
-              {/* Fundamentals */}
-              {val && (
-                <div className="glass-panel rounded-[2rem] p-8 shadow-xl">
-                  <SectionHeader icon={DollarSign} label="Fundamentals" sub="Valuation & Quality Metrics" />
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <MetricCard label="P/E Ratio" value={fmt(val.peRatio, 1)} sub="Earnings Multiple" />
-                    <MetricCard label="P/B Ratio" value={fmt(val.pbRatio, 2)} sub="Book Multiple" />
-                    <MetricCard label="ROE" value={pct(val.roe)} sub="Return on Equity" highlight trend={val.roe && val.roe > 0.15 ? "up" : undefined} />
-                    <MetricCard label="Debt/Eq" value={fmt(val.debtToEquity, 2)} sub="Leverage Ratio" />
-                    <MetricCard label="Div Yield" value={pct(val.dividendYield)} sub="Annual Yield" />
-                    <MetricCard label="Signal" value={val.valueSignal} sub="Investment Style" />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Risk & Momentum Grid */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-              {/* Risk Metrics */}
-              <div className="glass-panel rounded-[2rem] p-8 shadow-xl">
-                <SectionHeader icon={Shield} label="Risk Analysis" sub="Volatility & Tail Risk" />
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  {vol && <MetricCard label="Sharpe" value={fmt(vol.sharpeRatio)} sub="Risk-Adj. Return" highlight trend={vol.sharpeRatio > 1 ? "up" : undefined} />}
-                  {analysis.riskMetrics && (
-                    <>
-                      <MetricCard label="VaR (95%)" value={pct(analysis.riskMetrics.var95)} sub="Max Daily Loss" />
-                      <MetricCard label="CVaR (95%)" value={pct(analysis.riskMetrics.cvar95)} sub="Expected Tail Loss" />
-                      <MetricCard label="GARCH Vol" value={pct(analysis.riskMetrics.garchVol)} sub="Dynamic Vol" />
-                    </>
-                  )}
-                  {vol && <MetricCard label="Ann. Vol" value={pct(vol.annualizedVolatility)} sub="Yearly Sigma" />}
-                  {vol && <MetricCard label="Risk Level" value={vol.riskLevel} sub="Categorization" />}
+      {activeTab === "quant" && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {ff && (
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <SectionTitle icon={BarChart2} label="Factor Exposure" sub="Fama-French 5-Factor Model" />
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <MetricCard label="Market β"    value={fmt(ff.betas.marketBeta)}  sub="Systematic Risk"   highlight trend={ff.betas.marketBeta > 1.2 ? "up" : ff.betas.marketBeta < 0.8 ? "down" : undefined} />
+                  <MetricCard label="Size (SMB)"  value={fmt(ff.betas.smbBeta)}     sub="Small Cap Tilt" />
+                  <MetricCard label="Value (HML)" value={fmt(ff.betas.hmlBeta)}     sub="Value Premium" />
+                  <MetricCard label="Profit (RMW)"value={fmt(ff.rmwBeta)}           sub="Quality Factor" />
+                  <MetricCard label="Inv (CMA)"   value={fmt(ff.cmaBeta)}           sub="Investment Factor" />
+                  <MetricCard label="Alpha (α)"   value={`${(ff.betas.alpha * 100).toFixed(2)}%`} sub="Excess Return" highlight trend={ff.betas.alpha > 0 ? "up" : "down"} />
                 </div>
               </div>
-
-              {/* Momentum & Sizing */}
-              <div className="glass-panel rounded-[2rem] p-8 shadow-xl">
-                <SectionHeader icon={Activity} label="Momentum & Sizing" sub="Trend Analysis & Allocation" />
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  {mom && (
-                    <>
-                      <MetricCard label="12M Mom" value={pct(mom.momentum12M - 1)} sub="Yearly Trend" highlight trend={mom.momentum12M > 1 ? "up" : "down"} />
-                      <MetricCard label="3M Mom" value={pct(mom.momentum3M - 1)} sub="Quarterly Trend" trend={mom.momentum3M > 1 ? "up" : "down"} />
-                      <MetricCard label="Signal" value={mom.signal} sub="Trend Status" />
-                    </>
-                  )}
-                  {analysis.kelly && (
-                    <>
-                      <MetricCard label="Kelly (Half)" value={`${(analysis.kelly.halfKelly * 100).toFixed(1)}%`} sub="Optimized Stake" highlight />
-                      <MetricCard label="Kelly (Full)" value={`${(analysis.kelly.fullKelly * 100).toFixed(1)}%`} sub="Max Theoretical" />
-                    </>
-                  )}
+            )}
+            {val && (
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <SectionTitle icon={DollarSign} label="Fundamentals" sub="Valuation & Quality Metrics" />
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <MetricCard label="P/E Ratio"  value={fmt(val.peRatio, 1)}          sub="Earnings Multiple" />
+                  <MetricCard label="P/B Ratio"  value={fmt(val.pbRatio, 2)}          sub="Book Multiple" />
+                  <MetricCard label="ROE"        value={pct(val.roe)}                  sub="Return on Equity" highlight trend={val.roe && val.roe > 0.15 ? "up" : undefined} />
+                  <MetricCard label="Debt/Eq"    value={fmt(val.debtToEquity, 2)}      sub="Leverage Ratio" />
+                  <MetricCard label="Div Yield"  value={pct(val.dividendYield)}        sub="Annual Yield" />
+                  <MetricCard label="Signal"     value={val.valueSignal}               sub="Investment Style" />
                 </div>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+              <SectionTitle icon={Shield} label="Risk Analysis" sub="Volatility & Tail Risk" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {vol && <MetricCard label="Sharpe"    value={fmt(vol.sharpeRatio)}              sub="Risk-Adj. Return" highlight trend={vol.sharpeRatio > 1 ? "up" : undefined} />}
+                {analysis.riskMetrics && <>
+                  <MetricCard label="VaR (95%)"  value={pct(analysis.riskMetrics.var95)}   sub="Max Daily Loss" />
+                  <MetricCard label="CVaR (95%)" value={pct(analysis.riskMetrics.cvar95)}  sub="Expected Tail Loss" />
+                  <MetricCard label="GARCH Vol"  value={pct(analysis.riskMetrics.garchVol)} sub="Dynamic Vol" />
+                </>}
+                {vol && <MetricCard label="Ann. Vol"  value={pct(vol.annualizedVolatility)} sub="Yearly Sigma" />}
+                {vol && <MetricCard label="Risk Level" value={vol.riskLevel}                sub="Categorization" />}
+              </div>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+              <SectionTitle icon={Activity} label="Momentum & Sizing" sub="Trend Analysis & Allocation" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {mom && <>
+                  <MetricCard label="12M Mom"  value={pct(mom.momentum12M - 1)} sub="Yearly Trend"    highlight trend={mom.momentum12M > 1 ? "up" : "down"} />
+                  <MetricCard label="3M Mom"   value={pct(mom.momentum3M - 1)}  sub="Quarterly Trend" trend={mom.momentum3M > 1 ? "up" : "down"} />
+                  <MetricCard label="Signal"   value={mom.signal}               sub="Trend Status" />
+                </>}
+                {analysis.kelly && <>
+                  <MetricCard label="Kelly ½"  value={`${(analysis.kelly.halfKelly * 100).toFixed(1)}%`} sub="Optimized Stake" highlight />
+                  <MetricCard label="Kelly F"  value={`${(analysis.kelly.fullKelly * 100).toFixed(1)}%`} sub="Max Theoretical" />
+                </>}
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      <div className="flex justify-center pt-12 pb-8 opacity-50">
-        <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-text-secondary">
-          Analyzed {new Date(analysis.analyzedAt).toLocaleString()} · Institutional Grade Engine
+      <div className="flex justify-center pt-6 pb-4 border-t border-slate-800/50">
+        <p className="text-[10px] uppercase font-medium tracking-widest text-slate-600">
+          Analyzed {new Date(analysis.analyzedAt).toLocaleString()} · Engine v2.1
         </p>
       </div>
     </div>
