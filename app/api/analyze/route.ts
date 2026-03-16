@@ -8,6 +8,9 @@ function sseEvent(controller: ReadableStreamDefaultController, event: ProgressEv
   controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
 }
 
+// US equity tickers: 1–6 uppercase letters/digits, optional dot suffix (e.g. BRK.A)
+const TICKER_RE = /^[A-Z]{1,6}(\.[A-Z]{1,2})?$/;
+
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const ticker: string = (body.ticker ?? "").toUpperCase().trim();
@@ -16,6 +19,7 @@ export async function POST(req: NextRequest) {
   const claudeKey: string = process.env.ANTHROPIC_API_KEY || body.claudeKey || "";
 
   if (!ticker) return NextResponse.json({ error: "Ticker required" }, { status: 400 });
+  if (!TICKER_RE.test(ticker)) return NextResponse.json({ error: "Invalid ticker format" }, { status: 400 });
   if (!polygonKey) return NextResponse.json({ error: "Polygon API key required" }, { status: 400 });
   if (!fmpKey) return NextResponse.json({ error: "FMP API key required" }, { status: 400 });
 

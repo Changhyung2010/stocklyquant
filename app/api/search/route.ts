@@ -10,6 +10,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing query or API key" }, { status: 400 });
   }
 
+  if (q.length > 50) {
+    return NextResponse.json({ error: "Query too long" }, { status: 400 });
+  }
+
   try {
     const encoded = encodeURIComponent(q);
     const url = `https://api.polygon.io/v3/reference/tickers?search=${encoded}&active=true&market=stocks&limit=20&apiKey=${apiKey}`;

@@ -92,6 +92,12 @@ export async function GET(req: NextRequest) {
     const upper95: number | null = pred.predicted_upper_95 != null ? Number(pred.predicted_upper_95) : null;
     const lower95: number | null = pred.predicted_lower_95 != null ? Number(pred.predicted_lower_95) : null;
 
+    if (startPrice === 0 || actualPrice === 0) {
+      console.error(`[cron/evaluate] Zero price for ${pred.ticker} (start=${startPrice}, actual=${actualPrice}), skipping`);
+      results.push({ ticker: pred.ticker, evaluated: false, error: "Invalid price data (zero)" });
+      continue;
+    }
+
     const predictedReturn = (predictedPrice - startPrice) / startPrice;
     const actualReturn = (actualPrice - startPrice) / startPrice;
 

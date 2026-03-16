@@ -19,7 +19,8 @@ export async function GET() {
     .order("created_at", { ascending: false });
 
   if (resultsError) {
-    return NextResponse.json({ error: resultsError.message }, { status: 500 });
+    console.error("[accuracy] DB error:", resultsError);
+    return NextResponse.json({ error: "Failed to fetch accuracy data" }, { status: 500 });
   }
 
   // Fetch recent predictions (last 30)
