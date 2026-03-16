@@ -122,7 +122,7 @@ export function PredictionChart({ prediction }: PredictionChartProps) {
       <div className="flex gap-3 mb-3 flex-wrap">
         <div className="flex-1 min-w-0 bg-surface-highlight/40 rounded-lg px-3 py-2 text-center">
           <p className="text-xs text-text-secondary mb-0.5">30-Day Expected</p>
-          <p className={`text-sm font-bold ${expColor}`}>
+          <p className="text-sm font-bold" style={{ color: expColor }}>
             {exp30 >= 0 ? "+" : ""}{(exp30 * 100).toFixed(1)}%
           </p>
         </div>

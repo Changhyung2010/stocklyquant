@@ -1,18 +1,20 @@
 "use client";
 import { useEffect } from "react";
-import { Search, Bookmark, BarChart2, Settings as SettingsIcon, TrendingUp, Menu } from "lucide-react";
+import { Search, Bookmark, BarChart2, Settings as SettingsIcon, TrendingUp, FlaskConical } from "lucide-react";
 import { useApp } from "@/lib/context";
 import StockSearch from "@/components/StockSearch";
 import Watchlist from "@/components/Watchlist";
 import MarketDashboard from "@/components/MarketDashboard";
 import Settings from "@/components/Settings";
+import AccuracyDashboard from "@/components/AccuracyDashboard";
 
-type Tab = "search" | "watchlist" | "market" | "settings";
+type Tab = "search" | "watchlist" | "market" | "settings" | "accuracy";
 
 const NAV_ITEMS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "search", label: "Analysis", icon: Search },
   { id: "watchlist", label: "Watchlist", icon: Bookmark },
   { id: "market", label: "Market", icon: BarChart2 },
+  { id: "accuracy", label: "Accuracy", icon: FlaskConical },
 ];
 
 export default function HomePage() {
@@ -83,7 +85,7 @@ export default function HomePage() {
                 {/* Watchlist Count Badge */}
                 {id === "watchlist" && watchlist.length > 0 && (
                   <span className={`absolute top-2 right-2 lg:top-1/2 lg:-translate-y-1/2 lg:right-4 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full text-[10px] font-bold ring-2 ring-background ${
-                    isActive ? "bg-primary text-background" : "bg-surface-highlight text-text-secondary"
+                    isActive ? "bg-primary text-white" : "bg-surface-highlight text-text-secondary"
                   }`}>
                     {watchlist.length > 9 ? "9+" : watchlist.length}
                   </span>
@@ -122,6 +124,7 @@ export default function HomePage() {
             {activeTab === "watchlist" && <div className="h-full overflow-y-auto px-6 py-8"><Watchlist /></div>}
             {activeTab === "market" && <div className="h-full overflow-y-auto px-6 py-8"><MarketDashboard /></div>}
             {activeTab === "settings" && <div className="h-full overflow-y-auto px-6 py-8"><Settings /></div>}
+            {activeTab === "accuracy" && <div className="h-full overflow-y-auto px-6 py-8"><AccuracyDashboard /></div>}
           </div>
         </div>
       </main>

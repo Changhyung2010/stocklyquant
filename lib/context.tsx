@@ -22,8 +22,8 @@ interface AppContextValue {
   removeFromWatchlist: (ticker: string) => void;
   currentAnalysis: QuantAnalysis | null;
   setCurrentAnalysis: (a: QuantAnalysis | null) => void;
-  activeTab: "search" | "watchlist" | "market" | "settings";
-  setActiveTab: (t: "search" | "watchlist" | "market" | "settings") => void;
+  activeTab: "search" | "watchlist" | "market" | "settings" | "accuracy";
+  setActiveTab: (t: "search" | "watchlist" | "market" | "settings" | "accuracy") => void;
   envKeysSet: boolean;
 }
 
@@ -33,7 +33,7 @@ export function AppProvider({ children, envKeysSet }: { children: React.ReactNod
   const [apiKeys, setApiKeysState] = useState<ApiKeys>({ polygon: "", fmp: "", claude: "" });
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [currentAnalysis, setCurrentAnalysis] = useState<QuantAnalysis | null>(null);
-  const [activeTab, setActiveTab] = useState<AppContextValue["activeTab"]>("search");
+  const [activeTab, setActiveTab] = useState<"search" | "watchlist" | "market" | "settings" | "accuracy">("search");
 
   // Load from localStorage on mount (hydration safe)
   useEffect(() => {

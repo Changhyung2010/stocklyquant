@@ -28,7 +28,7 @@ function MetricCard({ label, value, sub, highlight = false, trend }: { label: st
         ? "bg-primary/5 border-primary/20 shadow-lg shadow-primary/5"
         : "bg-surface-highlight/40 border-white/5 hover:bg-surface-highlight/60 hover:border-white/10"
       }`}>
-      <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-2 opacity-60 group-hover:opacity-100 transition-opacity">{label}</p>
+      <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-2 opacity-80 group-hover:opacity-100 transition-opacity">{label}</p>
       <div className="flex items-baseline gap-2">
         <p className={`text-xl font-bold tracking-tight tabular-nums ${highlight ? "text-primary" : "text-text-primary"}`}>
           {value}
@@ -39,7 +39,7 @@ function MetricCard({ label, value, sub, highlight = false, trend }: { label: st
           </span>
         )}
       </div>
-      {sub && <p className="text-[10px] font-medium text-text-secondary/40 mt-1 leading-tight group-hover:text-text-secondary/60 transition-colors">{sub}</p>}
+      {sub && <p className="text-[10px] font-medium text-text-secondary/60 mt-1 leading-tight group-hover:text-text-secondary/80 transition-colors">{sub}</p>}
     </div>
   );
 }
@@ -55,7 +55,7 @@ function SectionHeader({ icon: Icon, label, gradient = false, sub }: { icon: Rea
           <h3 className={`text-xs font-black uppercase tracking-widest ${gradient ? "bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary" : "text-text-secondary"}`}>
             {label}
           </h3>
-          {sub && <p className="text-[9px] text-text-secondary/40 font-bold uppercase tracking-tight mt-0.5">{sub}</p>}
+          {sub && <p className="text-[9px] text-text-secondary/60 font-bold uppercase tracking-tight mt-0.5">{sub}</p>}
         </div>
       </div>
     </div>
@@ -136,7 +136,7 @@ export default function StockDetail({ analysis }: Props) {
 
           <div className="flex items-center gap-6">
             <div className="space-y-1">
-              <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest opacity-50">Current Price</p>
+              <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest opacity-70">Current Price</p>
               <div className="flex items-baseline gap-3">
                 <span className="text-5xl font-bold text-text-primary tracking-tighter tabular-nums">
                   ${profile?.price?.toFixed(2) ?? "0.00"}
@@ -154,7 +154,7 @@ export default function StockDetail({ analysis }: Props) {
             <div className="h-12 w-px bg-white/5 mx-2 hidden sm:block" />
 
             <div className="space-y-1 hidden sm:block">
-              <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest opacity-50">Market Cap</p>
+              <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest opacity-70">Market Cap</p>
               <p className="text-2xl font-bold text-text-primary tracking-tight">
                 {marketCapFormatted(profile?.mktCap)}
               </p>
@@ -201,13 +201,13 @@ export default function StockDetail({ analysis }: Props) {
                   <span className={`text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br ${config.gradient}`}>
                     {currentScore.toFixed(0)}
                   </span>
-                  <span className="text-xl font-bold text-text-secondary/40 mb-4">/100</span>
+                  <span className="text-xl font-bold text-text-secondary/60 mb-4">/100</span>
                 </div>
 
                 {hasAiScore && (
                   <div className="flex flex-col gap-1 border-l border-white/10 pl-6 py-2">
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-[10px] font-bold text-text-secondary/50 uppercase">Base</span>
+                      <span className="text-[10px] font-bold text-text-secondary/70 uppercase">Base</span>
                       <span className="text-sm font-bold text-text-primary">{analysis.quantScore.toFixed(0)}</span>
                     </div>
                     <div className="flex items-center justify-between gap-4">
@@ -382,7 +382,7 @@ export default function StockDetail({ analysis }: Props) {
         )}
       </div>
 
-      <div className="flex justify-center pt-12 pb-8 opacity-30">
+      <div className="flex justify-center pt-12 pb-8 opacity-50">
         <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-text-secondary">
           Analyzed {new Date(analysis.analyzedAt).toLocaleString()} · Institutional Grade Engine
         </p>

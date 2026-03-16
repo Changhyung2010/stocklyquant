@@ -30,7 +30,7 @@ export default function Watchlist() {
         </p>
         <button
           onClick={() => setActiveTab("search")}
-          className="group flex items-center gap-2 bg-primary hover:bg-primary/90 text-background font-bold px-6 py-3 rounded-xl transition-all shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-0.5"
+          className="group flex items-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-6 py-3 rounded-xl transition-all shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-0.5"
         >
           <Plus size={18} strokeWidth={3} />
           Find Stocks
@@ -44,7 +44,7 @@ export default function Watchlist() {
       <div className="flex items-end justify-between mb-8">
         <div>
           <h1 className="text-4xl font-black text-white tracking-tighter">Watchlist</h1>
-          <p className="text-text-secondary text-sm font-medium mt-1 uppercase tracking-widest opacity-60">
+          <p className="text-text-secondary text-sm font-medium mt-1 uppercase tracking-widest opacity-80">
             Tracking {watchlist.length} asset{watchlist.length !== 1 ? "s" : ""}
           </p>
         </div>
@@ -78,7 +78,7 @@ export default function Watchlist() {
             <div onClick={() => analyze(item.ticker)} className="cursor-pointer">
               <div className="mb-6">
                 <h3 className="text-2xl font-black text-white group-hover:text-primary transition-colors tracking-tighter">{item.ticker}</h3>
-                <div className="flex items-center gap-1.5 text-[10px] font-bold text-text-secondary uppercase tracking-widest opacity-40 mt-1">
+                <div className="flex items-center gap-1.5 text-[10px] font-bold text-text-secondary uppercase tracking-widest opacity-60 mt-1">
                   <Calendar size={10} />
                   <span>Added {new Date(item.addedDate).toLocaleDateString()}</span>
                 </div>
@@ -86,13 +86,13 @@ export default function Watchlist() {
 
               <div className="flex items-center justify-between pt-5 border-t border-white/5">
                 <div>
-                  <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1 opacity-50">Last Price</p>
+                  <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1 opacity-70">Last Price</p>
                   <p className="text-xl font-bold text-text-primary tracking-tight tabular-nums">
                     {item.lastPrice ? `$${item.lastPrice.toFixed(2)}` : "—"}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1 opacity-50">Quant Score</p>
+                  <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1 opacity-70">Quant Score</p>
                   <p className={`text-xl font-black ${SCORE_COLOR(item.lastQuantScore)} tracking-tighter`}>
                     {item.lastQuantScore ? item.lastQuantScore.toFixed(0) : "—"}
                   </p>

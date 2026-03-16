@@ -69,7 +69,7 @@ export default function MarketDashboard() {
       <div className="flex items-center justify-between mb-10">
         <div>
           <h1 className="text-4xl font-black text-white tracking-tighter">Global Markets</h1>
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-text-secondary mt-1 flex items-center gap-2 opacity-60">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-text-secondary mt-1 flex items-center gap-2 opacity-80">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
@@ -119,7 +119,7 @@ export default function MarketDashboard() {
                   </div>
                   <div>
                     <h3 className="font-black text-lg text-white leading-none tracking-tight">{idx.ticker}</h3>
-                    <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mt-1 opacity-50">{info.name}</p>
+                    <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mt-1 opacity-70">{info.name}</p>
                   </div>
                 </div>
               </div>

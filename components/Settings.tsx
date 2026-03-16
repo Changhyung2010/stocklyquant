@@ -87,7 +87,7 @@ export default function Settings() {
                     value={local.polygon}
                     onChange={(e) => handleChange("polygon", e.target.value)}
                     placeholder="Enter Polygon key..."
-                    className="w-full glass-input rounded-xl py-3 px-4 pr-12 text-sm text-white placeholder:text-text-secondary/30"
+                    className="w-full glass-input rounded-xl py-3 px-4 pr-12 text-sm text-white placeholder:text-text-secondary/50"
                   />
                   <button
                     onClick={() => toggleShow("polygon")}
@@ -112,7 +112,7 @@ export default function Settings() {
                     value={local.fmp}
                     onChange={(e) => handleChange("fmp", e.target.value)}
                     placeholder="Enter FMP key..."
-                    className="w-full glass-input rounded-xl py-3 px-4 pr-12 text-sm text-white placeholder:text-text-secondary/30"
+                    className="w-full glass-input rounded-xl py-3 px-4 pr-12 text-sm text-white placeholder:text-text-secondary/50"
                   />
                   <button
                     onClick={() => toggleShow("fmp")}
@@ -146,7 +146,7 @@ export default function Settings() {
                 value={local.claude}
                 onChange={(e) => handleChange("claude", e.target.value)}
                 placeholder="sk-ant-..."
-                className="w-full glass-input rounded-xl py-3 px-4 pr-12 text-sm text-white placeholder:text-text-secondary/30 border-secondary/20 focus:border-secondary/50 focus:ring-secondary/20"
+                className="w-full glass-input rounded-xl py-3 px-4 pr-12 text-sm text-white placeholder:text-text-secondary/50 border-secondary/20 focus:border-secondary/50 focus:ring-secondary/20"
               />
               <button
                 onClick={() => toggleShow("claude")}
@@ -167,7 +167,7 @@ export default function Settings() {
         className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-lg ${
           saved 
             ? "bg-success text-white shadow-success/20" 
-            : "bg-primary hover:bg-primary/90 text-background shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-0.5"
+            : "bg-primary hover:bg-primary/90 text-white shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-0.5"
         }`}
       >
         {saved ? <CheckCircle size={20} /> : <Save size={20} />}
