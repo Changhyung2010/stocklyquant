@@ -49,7 +49,7 @@ export default function HomePage() {
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
             <TrendingUp size={18} className="text-white" strokeWidth={2.5} />
           </div>
-          <span className="hidden lg:block ml-3 font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">
+          <span className="hidden lg:block ml-3 font-bold text-lg tracking-tight text-white">
             StocklyQuant
           </span>
         </div>

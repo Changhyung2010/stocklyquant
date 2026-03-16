@@ -5,6 +5,96 @@ import type { StockSearchResult, QuantAnalysis, ProgressEvent } from "@/lib/type
 import { useApp } from "@/lib/context";
 import StockDetail from "./StockDetail";
 
+interface SearchInputProps {
+  large?: boolean;
+  wrapperRef: React.RefObject<HTMLDivElement | null>;
+  query: string;
+  setQuery: React.Dispatch<React.SetStateAction<string>>;
+  suggestions: StockSearchResult[];
+  setSuggestions: React.Dispatch<React.SetStateAction<StockSearchResult[]>>;
+  loadingSuggestions: boolean;
+  hasKeys: boolean | string;
+  analyzing: boolean;
+  analyze: (ticker: string) => void;
+  setCurrentAnalysis: (a: QuantAnalysis | null) => void;
+  setError: React.Dispatch<React.SetStateAction<string>>;
+}
+
+function SearchInput({
+  large = false,
+  wrapperRef,
+  query,
+  setQuery,
+  suggestions,
+  setSuggestions,
+  loadingSuggestions,
+  hasKeys,
+  analyzing,
+  analyze,
+  setCurrentAnalysis,
+  setError,
+}: SearchInputProps) {
+  return (
+    <div ref={wrapperRef} className="relative w-full max-w-2xl mx-auto z-20">
+      <div className={`relative flex items-center transition-all duration-300 ${large ? "scale-100" : "scale-95"}`}>
+        <Search
+          className={`absolute left-4 text-text-secondary pointer-events-none transition-colors ${
+            large ? "w-6 h-6" : "w-5 h-5"
+          }`}
+        />
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value.toUpperCase())}
+          onKeyDown={(e) => e.key === "Enter" && analyze(query.trim())}
+          placeholder="Search ticker (e.g., AAPL, NVDA)..."
+          className={`w-full bg-surface-highlight/40 backdrop-blur-xl text-text-primary rounded-2xl border border-white/10 focus:border-primary/50 focus:bg-surface-highlight/60 focus:ring-4 focus:ring-primary/10 transition-all outline-none placeholder:text-text-secondary/50 ${
+            large ? "pl-14 pr-12 py-5 text-lg shadow-2xl shadow-black/50" : "pl-12 pr-10 py-3 text-sm shadow-lg"
+          }`}
+          disabled={!hasKeys || analyzing}
+        />
+        {query && (
+          <button
+            onClick={() => { setQuery(""); setSuggestions([]); setCurrentAnalysis(null); setError(""); }}
+            className="absolute right-4 text-text-secondary hover:text-white transition-colors"
+          >
+            <X size={18} />
+          </button>
+        )}
+      </div>
+
+      {/* Suggestions Dropdown */}
+      {suggestions.length > 0 && (
+        <div className="absolute top-full left-0 right-0 mt-2 bg-surface/95 backdrop-blur-xl border border-border rounded-2xl overflow-hidden shadow-2xl z-50 animate-fade-in">
+          {loadingSuggestions ? (
+            <div className="p-4 flex justify-center">
+              <Loader2 size={20} className="animate-spin text-primary" />
+            </div>
+          ) : (
+            suggestions.slice(0, 6).map((s) => (
+              <button
+                key={s.ticker}
+                onClick={() => analyze(s.ticker)}
+                className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-white/5 transition-colors text-left border-b border-border/50 last:border-0 group"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="w-12 font-bold text-white bg-surface-highlight/50 px-2 py-1 rounded-md text-center text-sm group-hover:bg-primary/20 group-hover:text-primary transition-colors">
+                    {s.ticker}
+                  </span>
+                  <span className="text-text-secondary text-sm truncate max-w-[200px]">{s.name}</span>
+                </div>
+                <span className="text-xs text-text-secondary/50 uppercase font-medium tracking-wider bg-surface-highlight/30 px-2 py-0.5 rounded">
+                  {s.exchange}
+                </span>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const STAGES = [
   "Fetching Stock Data...",
   "Claude Researching...",
@@ -149,66 +239,20 @@ export default function StockSearch() {
     }
   }
 
-  // ─── Render Helper: Search Input ───────────────────────────────────────────
-  const SearchInput = ({ large = false }: { large?: boolean }) => (
-    <div ref={wrapperRef} className="relative w-full max-w-2xl mx-auto z-20">
-      <div className={`relative flex items-center transition-all duration-300 ${large ? "scale-100" : "scale-95"}`}>
-        <Search 
-          className={`absolute left-4 text-text-secondary pointer-events-none transition-colors ${
-            large ? "w-6 h-6" : "w-5 h-5"
-          }`} 
-        />
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value.toUpperCase())}
-          onKeyDown={(e) => e.key === "Enter" && analyze(query.trim())}
-          placeholder="Search ticker (e.g., AAPL, NVDA)..."
-          className={`w-full bg-surface-highlight/40 backdrop-blur-xl text-text-primary rounded-2xl border border-white/10 focus:border-primary/50 focus:bg-surface-highlight/60 focus:ring-4 focus:ring-primary/10 transition-all outline-none placeholder:text-text-secondary/50 ${
-            large ? "pl-14 pr-12 py-5 text-lg shadow-2xl shadow-black/50" : "pl-12 pr-10 py-3 text-sm shadow-lg"
-          }`}
-          disabled={!hasKeys || analyzing}
-        />
-        {query && (
-          <button
-            onClick={() => { setQuery(""); setSuggestions([]); setCurrentAnalysis(null); setError(""); }}
-            className="absolute right-4 text-text-secondary hover:text-white transition-colors"
-          >
-            <X size={18} />
-          </button>
-        )}
-      </div>
-
-      {/* Suggestions Dropdown */}
-      {suggestions.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-surface/95 backdrop-blur-xl border border-border rounded-2xl overflow-hidden shadow-2xl z-50 animate-fade-in">
-          {loadingSuggestions ? (
-            <div className="p-4 flex justify-center">
-              <Loader2 size={20} className="animate-spin text-primary" />
-            </div>
-          ) : (
-            suggestions.slice(0, 6).map((s) => (
-              <button
-                key={s.ticker}
-                onClick={() => analyze(s.ticker)}
-                className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-white/5 transition-colors text-left border-b border-border/50 last:border-0 group"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="w-12 font-bold text-white bg-surface-highlight/50 px-2 py-1 rounded-md text-center text-sm group-hover:bg-primary/20 group-hover:text-primary transition-colors">
-                    {s.ticker}
-                  </span>
-                  <span className="text-text-secondary text-sm truncate max-w-[200px]">{s.name}</span>
-                </div>
-                <span className="text-xs text-text-secondary/50 uppercase font-medium tracking-wider bg-surface-highlight/30 px-2 py-0.5 rounded">
-                  {s.exchange}
-                </span>
-              </button>
-            ))
-          )}
-        </div>
-      )}
-    </div>
-  );
+  // ─── Shared props for SearchInput ──────────────────────────────────────────
+  const searchInputProps = {
+    wrapperRef,
+    query,
+    setQuery,
+    suggestions,
+    setSuggestions,
+    loadingSuggestions,
+    hasKeys,
+    analyzing,
+    analyze,
+    setCurrentAnalysis,
+    setError,
+  };
 
   // ─── Render: Hero / Loading / Content ──────────────────────────────────────
   
@@ -233,7 +277,7 @@ export default function StockSearch() {
           </div>
 
           <div className="w-full max-w-xl mx-auto">
-            <SearchInput large />
+            <SearchInput large {...searchInputProps} />
           </div>
 
           {!hasKeys && (
@@ -320,7 +364,7 @@ export default function StockSearch() {
       {/* Persistent Header */}
       <div className="sticky top-0 z-30 bg-background/40 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex items-center gap-6 shadow-xl">
         <div className="flex-1 max-w-xl">
-          <SearchInput />
+          <SearchInput {...searchInputProps} />
         </div>
         {error && (
           <div className="flex items-center gap-2 text-danger text-xs font-bold bg-danger/10 px-4 py-2 rounded-xl border border-danger/20 animate-fade-in">
